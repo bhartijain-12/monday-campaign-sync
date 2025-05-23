@@ -154,7 +154,7 @@ async function addCampaignAsLabel(campaignName) {
     query {
       boards(ids: ${leadBoardId}) {
         columns(ids: ["${statusColumnId}"]) {
-        
+
           settings_str
         }
       }
@@ -226,7 +226,7 @@ app.post("/webhook", async (req, res) => {
   // ✅ Respond to Monday's webhook verification challenge
   if (req.body.challenge) {
     console.log("🔐 Responding to challenge:", req.body.challenge);
-    return res.status(200).send(req.body.challenge);
+    return res.status(200).send(req.body);
   }
 
   // ✅ Process real event data
