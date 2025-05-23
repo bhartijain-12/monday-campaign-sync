@@ -1,133 +1,3 @@
-require("dotenv").config();
-const express = require("express");
-const axios = require("axios");
-
-const app = express();
-app.use(express.json());
-
-const MONDAY_API_URL = "https://api.monday.com/v2";
-const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN;
-
-// Helper to call Monday API
-async function mondayAPI(query, variables = {}) {
-  try {
-    const response = await axios.post(
-      MONDAY_API_URL,
-      { query, variables },
-      {
-        headers: {
-          Authorization: MONDAY_API_TOKEN,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    return response.data;
-  } catch (error) {
-    console.error(
-      "❌ Monday API error:",
-      error.response?.data || error.message
-    );
-  }
-}
-
-// Helper: Add label to status column if it doesn't already exist
-async function addCampaignAsLabel(campaignName) {
-  const leadBoardId = 1991449947;
-  const statusColumnId = "color_mkr326nz";
-
-  // 1. Get current settings for the column
-  const query = `
-    query getColumnSettings($boardId: [Int], $columnIds: [String]) {
-      boards(ids: $boardId) {
-        columns(ids: $columnIds) {
-          settings
-        }
-      }
-    }
-  `;
-
-  const variables = {
-    boardId: [leadBoardId],
-    columnIds: [statusColumnId],
-  };
-
-  const response = await mondayAPI(query, variables);
-
-  const settingsStr = response?.data?.boards?.[0]?.columns?.[0]?.settings;
-  if (!settingsStr) {
-    console.error("❌ Could not fetch column settings");
-    return;
-  }
-
-  const settings = JSON.parse(settingsStr);
-  const labels = settings.labels || {};
-
-  // Check if label exists
-  const labelExists = Object.values(labels).includes(campaignName);
-  if (labelExists) {
-    console.log("⚠️ Label already exists:", campaignName);
-    return;
-  }
-
-  // Add new label
-  const newKey = Object.keys(labels).length.toString();
-  labels[newKey] = campaignName;
-
-  const newSettings = { ...settings, labels };
-
-  // 2. Update column settings using the new mutation
-  const mutation = `
-    mutation changeColumnSettings($boardId: Int!, $columnId: String!, $settings: JSON!) {
-      change_column_settings(board_id: $boardId, column_id: $columnId, settings: $settings) {
-        id
-      }
-    }
-  `;
-
-  const mutationVariables = {
-    boardId: leadBoardId,
-    columnId: statusColumnId,
-    settings: newSettings,
-  };
-
-  await mondayAPI(mutation, mutationVariables);
-
-  console.log("✅ Added new label:", campaignName);
-}
-
-// Root route (test)
-app.get("/", (req, res) => {
-  res.send("✅ Server is running on Render!");
-});
-
-// Webhook endpoint for Monday automation
-app.post("/webhook", async (req, res) => {
-  console.log("📬 Webhook received:", JSON.stringify(req.body));
-
-  // Handle Monday challenge verification
-  if (req.body.challenge) {
-    console.log("🔐 Responding to challenge:", req.body.challenge);
-    return res.status(200).send(req.body.challenge);
-  }
-
-  const itemName = req.body?.event?.value?.name || "Unnamed";
-
-  if (!itemName || itemName === "Unnamed") {
-    return res.status(200).send("⚠️ Test webhook received. No item name.");
-  }
-
-  console.log("📢 New campaign detected:", itemName);
-  await addCampaignAsLabel(itemName);
-
-  res.status(200).send("✅ Label synced");
-});
-
-// Start server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
-
 // require("dotenv").config();
 // const express = require("express");
 // const axios = require("axios");
@@ -243,126 +113,104 @@ app.listen(PORT, () => {
 
 
 
-// require("dotenv").config();
-// const express = require("express");
-// const axios = require("axios");
+require("dotenv").config();
+const express = require("express");
+const axios = require("axios");
 
-// const app = express();
-// app.use(express.json());
+const app = express();
+app.use(express.json());
 
-// const MONDAY_API_URL = "https://api.monday.com/v2";
-// const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN;
+const MONDAY_API_URL = "https://api.monday.com/v2";
+const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN;
 
-// // Helper to call Monday API
-// async function mondayAPI(query, variables = {}) {
-//   try {
-//     const response = await axios.post(
-//       MONDAY_API_URL,
-//       { query, variables },
-//       {
-//         headers: {
-//           Authorization: MONDAY_API_TOKEN,
-//           "Content-Type": "application/json",
-//         },
-//       }
-//     );
-//     return response.data;
-//   } catch (error) {
-//     console.error(
-//       "❌ Monday API error:",
-//       error.response?.data || error.message
-//     );
-//   }
-// }
+// Helper to call Monday API
+async function mondayAPI(query, variables = {}) {
+  try {
+    const response = await axios.post(
+      MONDAY_API_URL,
+      { query, variables },
+      {
+        headers: {
+          Authorization: MONDAY_API_TOKEN,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error(
+      "❌ Monday API error:",
+      error.response?.data || error.message
+    );
+  }
+}
 
-// // Helper: Add label to status column if it doesn't already exist
-// async function addCampaignAsLabel(campaignName) {
-//   const leadBoardId = 1991449947;
-//   const statusColumnId = "color_mkr326nz";
+// Helper: Add label to status column if it doesn't already exist
+async function addCampaignAsLabel(campaignName) {
+  const leadBoardId = 1991449947;
+  const statusColumnId = "color_mkr326nz";
 
-//   const query = `
-//     query {
-//       boards(ids: ${leadBoardId}) {
-//         columns(ids: ["${statusColumnId}"]) {
-//           settings_str
-//         }
-//       }
-//     }
-//   `;
+  const query = `
+    query {
+      boards(ids: ${leadBoardId}) {
+        columns(ids: ["${statusColumnId}"]) {
+          settings_str
+        }
+      }
+    }
+  `;
 
-//   const response = await mondayAPI(query);
-//   const settingsStr = response?.data?.boards?.[0]?.columns?.[0]?.settings_str;
+  const response = await mondayAPI(query);
+  const settingsStr = response?.data?.boards?.[0]?.columns?.[0]?.settings_str;
 
-//   if (!settingsStr) {
-//     console.error("❌ Could not fetch column settings");
-//     return;
-//   }
+  if (!settingsStr) {
+    console.error("❌ Could not fetch column settings");
+    return;
+  }
 
-//   const settings = JSON.parse(settingsStr);
-//   const labels = settings.labels || {};
+  const settings = JSON.parse(settingsStr);
+  const labels = settings.labels || {};
 
-//   const labelExists = Object.values(labels).includes(campaignName);
-//   if (labelExists) {
-//     console.log("⚠️ Label already exists:", campaignName);
-//     return;
-//   }
+  const labelExists = Object.values(labels).includes(campaignName);
+  if (labelExists) {
+    console.log("⚠️ Label already exists:", campaignName);
+    return;
+  }
 
-//   const newKey = Object.keys(labels).length.toString();
-//   labels[newKey] = campaignName;
+  const newKey = Object.keys(labels).length.toString();
+  labels[newKey] = campaignName;
 
-//   const newSettingsStr = JSON.stringify({ labels });
+  const newSettingsStr = JSON.stringify({ labels });
 
-//   const mutation = `
-//     mutation {
-//       change_column_metadata(
-//         board_id: ${leadBoardId},
-//         column_id: "${statusColumnId}",
-//         settings_str: "${newSettingsStr.replace(/"/g, '\\"')}"
-//       ) {
-//         id
-//       }
-//     }
-//   `;
+  const mutation = `
+    mutation {
+      change_column_value(
+        board_id: ${leadBoardId},
+        column_id: "${statusColumnId}",
+         
+      ) {
+        id
+      }
+    }
+  `;
 
-//   await mondayAPI(mutation);
-//   console.log("✅ Added new label:", campaignName);
-// }
+  await mondayAPI(mutation);
+  console.log("✅ Added new label:", campaignName);
+}
 
-// // Root route (test)
-// app.get("/", (req, res) => {
-//   res.send("✅ Server is running on Render!");
-// });
+// Root route (test)
+app.get("/", (req, res) => {
+  res.send("✅ Server is running on Render!");
+});
 
-// // Webhook endpoint for Monday automation
-// // app.post("/webhook", async (req, res) => {
-// //   console.log("📬 Webhook received:", JSON.stringify(req.body));
-
-// //   const itemName = req.body?.event?.value?.name || "Unnamed";
-
-// //   if (!itemName || itemName === "Unnamed") {
-// //     return res.status(200).send("⚠️ Test webhook received. No item name.");
-// //   }
-
-// //   console.log("📢 New campaign detected:", itemName);
-// //   await addCampaignAsLabel(itemName);
-
-// //   res.status(200).send("✅ Label synced");
-// // });
-
+// Webhook endpoint for Monday automation
 // app.post("/webhook", async (req, res) => {
 //   console.log("📬 Webhook received:", JSON.stringify(req.body));
 
-//   // ✅ Respond to Monday's webhook verification challenge
-//   if (req.body.challenge) {
-//     console.log("🔐 Responding to challenge:", req.body.challenge);
-//     return res.status(200).send(req.body.challenge);
-//   }
-
-//   // ✅ Process real event data
 //   const itemName = req.body?.event?.value?.name || "Unnamed";
 
 //   if (!itemName || itemName === "Unnamed") {
-//     return res.status(200).send("⚠️ No item name found.");
+//     return res.status(200).send("⚠️ Test webhook received. No item name.");
 //   }
 
 //   console.log("📢 New campaign detected:", itemName);
@@ -371,8 +219,34 @@ app.listen(PORT, () => {
 //   res.status(200).send("✅ Label synced");
 // });
 
-// // Start server
-// const PORT = process.env.PORT || 3000;
-// app.listen(PORT, () => {
-//   console.log(`🚀 Server running on port ${PORT}`);
-// });
+app.post("/webhook", async (req, res) => {
+  console.log("📬 Webhook received:", JSON.stringify(req.body));
+
+  // ✅ Respond to Monday's webhook verification challenge
+  if (req.body.challenge) {
+    console.log("🔐 Responding to challenge:", req.body.challenge);
+    return res.status(200).send(req.body.challenge);
+  }
+
+  // ✅ Process real event data
+  const itemName = req.body?.event?.value?.name || "Unnamed";
+
+  if (!itemName || itemName === "Unnamed") {
+    return res.status(200).send("⚠️ No item name found.");
+  }
+
+  console.log("📢 New campaign detected:", itemName);
+  await addCampaignAsLabel(itemName);
+
+  res.status(200).send("✅ Label synced");
+});
+
+// Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
+
+
+
+// settings_str: "${newSettingsStr.replace(/"/g, '\\"')}"
