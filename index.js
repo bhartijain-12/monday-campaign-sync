@@ -315,13 +315,36 @@ app.get("/", (req, res) => {
 });
 
 // Webhook endpoint for Monday automation
+// app.post("/webhook", async (req, res) => {
+//   console.log("📬 Webhook received:", JSON.stringify(req.body));
+
+//   const itemName = req.body?.event?.value?.name || "Unnamed";
+
+//   if (!itemName || itemName === "Unnamed") {
+//     return res.status(200).send("⚠️ Test webhook received. No item name.");
+//   }
+
+//   console.log("📢 New campaign detected:", itemName);
+//   await addCampaignAsLabel(itemName);
+
+//   res.status(200).send("✅ Label synced");
+// });
+
+
 app.post("/webhook", async (req, res) => {
   console.log("📬 Webhook received:", JSON.stringify(req.body));
 
+  // ✅ Respond to Monday's webhook verification challenge
+  if (req.body.challenge) {
+    console.log("🔐 Responding to challenge:", req.body.challenge);
+    return res.status(200).send(req.body.challenge);
+  }
+
+  // ✅ Process real event data
   const itemName = req.body?.event?.value?.name || "Unnamed";
 
   if (!itemName || itemName === "Unnamed") {
-    return res.status(200).send("⚠️ Test webhook received. No item name.");
+    return res.status(200).send("⚠️ No item name found.");
   }
 
   console.log("📢 New campaign detected:", itemName);
@@ -329,6 +352,10 @@ app.post("/webhook", async (req, res) => {
 
   res.status(200).send("✅ Label synced");
 });
+
+
+
+
 
 // Start server
 const PORT = process.env.PORT || 3000;
