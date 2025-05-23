@@ -1,4 +1,3 @@
-
 // require("dotenv").config();
 // const express = require("express");
 // const axios = require("axios");
@@ -106,7 +105,6 @@
 //   console.log("🚀 Server running on port", PORT);
 // });
 
-
 require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
@@ -178,7 +176,7 @@ async function addCampaignAsLabel(campaignName) {
 
   const mutation = `
     mutation {
-      change_column_settings(
+       change_column_metadata(
         board_id: ${leadBoardId},
         column_id: "${statusColumnId}",
         settings_str: "${newSettingsStr.replace(/"/g, '\\"')}"
