@@ -154,6 +154,7 @@ async function addCampaignAsLabel(campaignName) {
     query {
       boards(ids: ${leadBoardId}) {
         columns(ids: ["${statusColumnId}"]) {
+        
           settings_str
         }
       }
@@ -184,7 +185,7 @@ async function addCampaignAsLabel(campaignName) {
 
   const mutation = `
     mutation {
-      change_column_value(
+      change_column_metadata(
         board_id: ${leadBoardId},
         column_id: "${statusColumnId}",
          
