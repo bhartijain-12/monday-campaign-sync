@@ -188,6 +188,7 @@ async function addCampaignAsLabel(campaignName) {
       change_column_metadata(
         board_id: ${leadBoardId},
         column_id: "${statusColumnId}",
+         settings_str: "${newSettingsStr.replace(/"/g, '\\"')}"
          
       ) {
         id
@@ -195,7 +196,15 @@ async function addCampaignAsLabel(campaignName) {
     }
   `;
 
-  await mondayAPI(mutation);
+  //   await mondayAPI(mutation);
+  //   console.log("✅ Added new label:", campaignName);
+  // }
+
+  const mutationResponse = await mondayAPI(mutation);
+  console.log(
+    "🟢 Mutation response:",
+    JSON.stringify(mutationResponse, null, 2)
+  );
   console.log("✅ Added new label:", campaignName);
 }
 
