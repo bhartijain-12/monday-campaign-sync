@@ -407,6 +407,186 @@
 
 
 
+// require("dotenv").config();
+// const express = require("express");
+// const axios = require("axios");
+
+// const app = express();
+// app.use(express.json());
+
+// const MONDAY_API_URL = "https://api.monday.com/v2";
+// const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN;
+
+// const LEAD_BOARD_ID = 2019233221;
+// const CAMPAIGN_BOARD_ID = 2019233164;
+// const STATUS_COLUMN_ID = "color_mkraagvh"; // column on lead board containing campaign name
+// const COUNTER_COLUMN_ID = "numeric_mkradsbn"; // counter column ID on campaign board (replace if needed)
+
+// // Helper to call Monday API
+// async function mondayAPI(query, variables = {}) {
+//   try {
+//     const response = await axios.post(
+//       MONDAY_API_URL,
+//       { query, variables },
+//       {
+//         headers: {
+//           Authorization: MONDAY_API_TOKEN,
+//           "Content-Type": "application/json",
+//         },
+//       }
+//     );
+//     return response.data;
+//   } catch (error) {
+//     console.error(
+//       "Monday API error:",
+//       error.response?.data || error.message
+//     );
+//     return null;
+//   }
+// }
+
+// // Webhook endpoint
+// app.post("/webhook", async (req, res) => {
+//   console.log("📬 Webhook received:", JSON.stringify(req.body));
+
+//   const leadItemId = req.body?.event?.pulseId;
+//   if (!leadItemId) return res.status(400).send(" Missing pulse ID.");
+
+//   // 1. Get the campaign name from the status column in the new lead item
+//   const campaignQuery = `
+//     query {
+//       items(ids: ${leadItemId}) {
+//         column_values(ids: ["${STATUS_COLUMN_ID}"]) {
+//           text
+//         }
+//       }
+//     }
+//   `;
+//   const leadData = await mondayAPI(campaignQuery);
+//   const campaignName = leadData?.data?.items?.[0]?.column_values?.[0]?.text;
+
+//   if (!campaignName) {
+//     return res.status(200).send("⚠️ No campaign selected.");
+//   }
+
+//   console.log("🎯 Campaign from lead:", campaignName);
+
+//   // 2. Find the matching item in the Campaign board
+//   // const findQuery = `
+//   //   query {
+//   //     boards(ids: ${CAMPAIGN_BOARD_ID}) {
+//   //       items {
+//   //         id
+//   //         name
+//   //         column_values(ids: ["${COUNTER_COLUMN_ID}"]) {
+//   //           id
+//   //           value
+//   //         }
+//   //       }
+//   //     }
+//   //   }
+//   // `;
+
+
+
+
+
+// //   
+
+// const findQuery = `
+// query ($boardId: ID!, $campaignName: [String]) {
+//   items_page_by_column_values (
+//     limit: 100,
+//     board_id: $boardId,
+//     columns: [
+//       { column_id: "name", column_values: $campaignName }
+//     ]
+//   ) {
+//     cursor
+//     items {
+//       id
+//       name
+//       column_values {
+//         column {
+//           title
+//         }
+//         text
+//         value
+//       }
+//     }
+//   }
+// }
+// `;
+
+// const variables = {
+//   boardId: CAMPAIGN_BOARD_ID,
+//   campaignName: [campaignName],
+// };
+
+
+// const campaignData = await mondayAPI(findQuery, variables);
+
+// const campaignItems =
+//   campaignData?.data?.items_page_by_column_values?.items || [];
+
+// if (campaignItems.length === 0) {
+//   console.log(" No campaign item matched.");
+//   return res.status(200).send("⚠️ Campaign item not found.");
+// }
+
+// const matchedItem = campaignItems[0];
+
+
+//   // Parse the current numeric counter properly
+//   const currentValue = parseInt(
+//     JSON.parse(matchedItem.column_values[0]?.value || "{}")?.number || "0"
+//   );
+//   const newValue = currentValue + 1;
+
+//   // 3. Update the counter column in the Campaign board
+//   const updateMutation = `
+//     mutation {
+//       change_column_value(
+//         item_id: ${matchedItem.id},
+//         board_id: ${CAMPAIGN_BOARD_ID},
+//         column_id: "${COUNTER_COLUMN_ID}",
+//         value: "{\"number\": ${newValue}}"
+//       ) {
+//         id
+//       }
+//     }
+//   `;
+
+//   const updateResult = await mondayAPI(updateMutation);
+
+//   if (!updateResult || updateResult.errors) {
+//     console.error(
+//       "Failed to update campaign counter:",
+//       updateResult?.errors
+//     );
+//     return res.status(500).send("Failed to update campaign counter.");
+//   }
+
+//   console.log(`Counter for '${campaignName}' updated to ${newValue}`);
+//   res.status(200).send("Campaign counter updated.");
+// });
+
+// // Test route
+// app.get("/", (req, res) => {
+//   res.send("Node app is running.");
+// });
+
+// // Start server
+// const PORT = process.env.PORT || 3000;
+// app.listen(PORT, () => {
+//   console.log(`🚀 Server is running on port ${PORT}`);
+// });
+
+
+
+
+
+
 require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
@@ -419,10 +599,11 @@ const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN;
 
 const LEAD_BOARD_ID = 2019233221;
 const CAMPAIGN_BOARD_ID = 2019233164;
-const STATUS_COLUMN_ID = "color_mkraagvh"; // column on lead board containing campaign name
-const COUNTER_COLUMN_ID = "numeric_mkradsbn"; // counter column ID on campaign board (replace if needed)
 
-// Helper to call Monday API
+const STATUS_COLUMN_ID = "color_mkraagvh"; // Lead board: campaign name status
+const COUNTER_COLUMN_ID = "numeric_mkradsbn"; // Campaign board: numeric counter column
+
+// 🔧 Helper to call Monday API
 async function mondayAPI(query, variables = {}) {
   try {
     const response = await axios.post(
@@ -438,21 +619,21 @@ async function mondayAPI(query, variables = {}) {
     return response.data;
   } catch (error) {
     console.error(
-      "Monday API error:",
+      "❌ Monday API error:",
       error.response?.data || error.message
     );
     return null;
   }
 }
 
-// Webhook endpoint
+// 🚀 Webhook endpoint
 app.post("/webhook", async (req, res) => {
   console.log("📬 Webhook received:", JSON.stringify(req.body));
 
   const leadItemId = req.body?.event?.pulseId;
-  if (!leadItemId) return res.status(400).send(" Missing pulse ID.");
+  if (!leadItemId) return res.status(400).send("❌ Missing pulse ID.");
 
-  // 1. Get the campaign name from the status column in the new lead item
+  // 🔹 Step 1: Get campaign name from lead item
   const campaignQuery = `
     query {
       items(ids: ${leadItemId}) {
@@ -471,79 +652,48 @@ app.post("/webhook", async (req, res) => {
 
   console.log("🎯 Campaign from lead:", campaignName);
 
-  // 2. Find the matching item in the Campaign board
-  // const findQuery = `
-  //   query {
-  //     boards(ids: ${CAMPAIGN_BOARD_ID}) {
-  //       items {
-  //         id
-  //         name
-  //         column_values(ids: ["${COUNTER_COLUMN_ID}"]) {
-  //           id
-  //           value
-  //         }
-  //       }
-  //     }
-  //   }
-  // `;
-
-
-
-
-
-//   
-
-const findQuery = `
-query ($boardId: ID!, $campaignName: [String]) {
-  items_page_by_column_values (
-    limit: 100,
-    board_id: $boardId,
-    columns: [
-      { column_id: "name", column_values: $campaignName }
-    ]
-  ) {
-    cursor
-    items {
-      id
-      name
-      column_values {
-        column {
-          title
+  // 🔹 Step 2: Get all items from campaign board and find matching campaign name
+  const findQuery = `
+    query {
+      boards(ids: ${CAMPAIGN_BOARD_ID}) {
+        items {
+          id
+          name
+          column_values(ids: ["${COUNTER_COLUMN_ID}"]) {
+            id
+            value
+          }
         }
-        text
-        value
       }
     }
-  }
-}
-`;
+  `;
 
-const variables = {
-  boardId: CAMPAIGN_BOARD_ID,
-  campaignName: [campaignName],
-};
+  const campaignData = await mondayAPI(findQuery);
+  const items = campaignData?.data?.boards?.[0]?.items || [];
 
-
-const campaignData = await mondayAPI(findQuery, variables);
-
-const campaignItems =
-  campaignData?.data?.items_page_by_column_values?.items || [];
-
-if (campaignItems.length === 0) {
-  console.log(" No campaign item matched.");
-  return res.status(200).send("⚠️ Campaign item not found.");
-}
-
-const matchedItem = campaignItems[0];
-
-
-  // Parse the current numeric counter properly
-  const currentValue = parseInt(
-    JSON.parse(matchedItem.column_values[0]?.value || "{}")?.number || "0"
+  const matchedItem = items.find(
+    (item) =>
+      item.name.trim().toLowerCase() === campaignName.trim().toLowerCase()
   );
+
+  if (!matchedItem) {
+    console.log("❌ No campaign item matched.");
+    return res.status(200).send("⚠️ Campaign item not found.");
+  }
+
+  // 🔹 Step 3: Parse and increment the counter value
+  const counterValue = matchedItem.column_values?.[0]?.value;
+  let currentValue = 0;
+
+  try {
+    currentValue = parseInt(JSON.parse(counterValue || "{}").number || "0");
+  } catch (e) {
+    console.warn("⚠️ Failed to parse counter value. Defaulting to 0.");
+  }
+
   const newValue = currentValue + 1;
 
-  // 3. Update the counter column in the Campaign board
+  // 🔹 Step 4: Update counter on campaign item
   const updateMutation = `
     mutation {
       change_column_value(
@@ -561,22 +711,22 @@ const matchedItem = campaignItems[0];
 
   if (!updateResult || updateResult.errors) {
     console.error(
-      "Failed to update campaign counter:",
+      "❌ Failed to update campaign counter:",
       updateResult?.errors
     );
     return res.status(500).send("Failed to update campaign counter.");
   }
 
-  console.log(`Counter for '${campaignName}' updated to ${newValue}`);
-  res.status(200).send("Campaign counter updated.");
+  console.log(`✅ Counter for '${campaignName}' updated to ${newValue}`);
+  res.status(200).send("✅ Campaign counter updated.");
 });
 
-// Test route
+// 🔹 Test route
 app.get("/", (req, res) => {
-  res.send("Node app is running.");
+  res.send("✅ Node app is running.");
 });
 
-// Start server
+// 🔹 Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
