@@ -114,176 +114,6 @@
 
 
 
-require("dotenv").config();
-const express = require("express");
-const axios = require("axios");
-
-const app = express();
-app.use(express.json());
-
-const MONDAY_API_URL = "https://api.monday.com/v2";
-const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN;
-
-// Helper to call Monday API
-async function mondayAPI(query, variables = {}) {
-  try {
-    const response = await axios.post(
-      MONDAY_API_URL,
-      { query, variables },
-      {
-        headers: {
-          Authorization: MONDAY_API_TOKEN,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    return response.data;
-  } catch (error) {
-    console.error(
-      "❌ Monday API error:",
-      error.response?.data || error.message
-    );
-  }
-}
-
-// Helper: Add label to status column if it doesn't already exist
-async function addCampaignAsLabel(campaignName) {
-  const leadBoardId = 2019233221;
-  const statusColumnId = "color_mkra9se9";
-
-  const query = `
-    query {
-      boards(ids: ${leadBoardId}) {
-        columns(ids: ["${statusColumnId}"]) {
-
-          settings_str
-        }
-      }
-    }
-  `;
-
-  const response = await mondayAPI(query);
-  const settingsStr = response?.data?.boards?.[0]?.columns?.[0]?.settings_str;
-
-  if (!settingsStr) {
-    console.error("❌ Could not fetch column settings");
-    return;
-  }
-
-  const settings = JSON.parse(settingsStr);
-  const labels = settings.labels || {};
-
-  const labelExists = Object.values(labels).includes(campaignName);
-  if (labelExists) {
-    console.log("⚠️ Label already exists:", campaignName);
-    return;
-  }
-
-  const newKey = Object.keys(labels).length.toString();
-  labels[newKey] = campaignName;
-
-  const newSettingsStr = JSON.stringify({ labels });
-
-  // const mutation = `
-  //   mutation {
-  //     change_column_metadata(
-  //       board_id: ${leadBoardId},
-  //       column_id: "${statusColumnId}",
-  //        settings_str: "${newSettingsStr.replace(/"/g, '\\"')}"
-         
-  //     ) {
-  //       id
-  //     }
-  //   }
-  // `;
-
-
-
-  const mutation = `
-  mutation {
-    change_column_metadata(
-      board_id: ${leadBoardId},
-      column_id: "${statusColumnId}",
-      column_metadata: {
-        labels: ${JSON.stringify(labels).replace(/"([^"]+)":/g, "$1:")}
-      }
-    ) {
-      id
-    }
-  }
-`;
-
-
-  //   await mondayAPI(mutation);
-  //   console.log("✅ Added new label:", campaignName);
-  // }
-
-  const mutationResponse = await mondayAPI(mutation);
-  console.log(
-    "🟢 Mutation response:",
-    JSON.stringify(mutationResponse, null, 2)
-  );
-  console.log("✅ Added new label:", campaignName);
-}
-
-// Root route (test)
-app.get("/", (req, res) => {
-  res.send("✅ Server is running on Render!");
-});
-
-// Webhook endpoint for Monday automation
-// app.post("/webhook", async (req, res) => {
-//   console.log("📬 Webhook received:", JSON.stringify(req.body));
-
-//   const itemName = req.body?.event?.value?.name || "Unnamed";
-
-//   if (!itemName || itemName === "Unnamed") {
-//     return res.status(200).send("⚠️ Test webhook received. No item name.");
-//   }
-
-//   console.log("📢 New campaign detected:", itemName);
-//   await addCampaignAsLabel(itemName);
-
-//   res.status(200).send("✅ Label synced");
-// });
-
-app.post("/webhook", async (req, res) => {
-  console.log("📬 Webhook received:", JSON.stringify(req.body));
-
-  // ✅ Respond to Monday's webhook verification challenge
-  if (req.body.challenge) {
-    console.log("🔐 Responding to challenge:", req.body.challenge);
-    return res.status(200).send(req.body);
-  }
-
-  // ✅ Process real event data
-  const itemName = req.body?.event?.pulseName || "Unnamed";
-
-
-  if (!itemName || itemName === "Unnamed") {
-    return res.status(200).send("⚠️ No item name found.");
-  }
-
-  console.log("📢 New campaign detected:", itemName);
-  await addCampaignAsLabel(itemName);
-
-  res.status(200).send("✅ Label synced");
-});
-
-// Start server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
-
-
-
-// // settings_str: "${newSettingsStr.replace(/"/g, '\\"')}"n
-
-
-
-
-
 // require("dotenv").config();
 // const express = require("express");
 // const axios = require("axios");
@@ -293,9 +123,6 @@ app.listen(PORT, () => {
 
 // const MONDAY_API_URL = "https://api.monday.com/v2";
 // const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN;
-
-// const LEAD_BOARD_ID = 2019233221; // Change to your lead board ID
-// const STATUS_COLUMN_ID = "color_mkra9se9"; // Change to your status column ID
 
 // // Helper to call Monday API
 // async function mondayAPI(query, variables = {}) {
@@ -316,17 +143,19 @@ app.listen(PORT, () => {
 //       "❌ Monday API error:",
 //       error.response?.data || error.message
 //     );
-//     return null;
 //   }
 // }
 
-// // Add a new label to the status column labels (if not already exists)
+// // Helper: Add label to status column if it doesn't already exist
 // async function addCampaignAsLabel(campaignName) {
-//   // 1. Fetch current status column settings (labels)
+//   const leadBoardId = 2019233221;
+//   const statusColumnId = "color_mkra9se9";
+
 //   const query = `
 //     query {
-//       boards(ids: ${LEAD_BOARD_ID}) {
-//         columns(ids: ["${STATUS_COLUMN_ID}"]) {
+//       boards(ids: ${leadBoardId}) {
+//         columns(ids: ["${statusColumnId}"]) {
+
 //           settings_str
 //         }
 //       }
@@ -334,12 +163,8 @@ app.listen(PORT, () => {
 //   `;
 
 //   const response = await mondayAPI(query);
-//   if (!response) {
-//     console.error("Failed to fetch column settings");
-//     return;
-//   }
-
 //   const settingsStr = response?.data?.boards?.[0]?.columns?.[0]?.settings_str;
+
 //   if (!settingsStr) {
 //     console.error("❌ Could not fetch column settings");
 //     return;
@@ -348,59 +173,92 @@ app.listen(PORT, () => {
 //   const settings = JSON.parse(settingsStr);
 //   const labels = settings.labels || {};
 
-//   // 2. Check if label already exists
-//   if (Object.values(labels).includes(campaignName)) {
+//   const labelExists = Object.values(labels).includes(campaignName);
+//   if (labelExists) {
 //     console.log("⚠️ Label already exists:", campaignName);
 //     return;
 //   }
 
-//   // 3. Add new label to labels object
 //   const newKey = Object.keys(labels).length.toString();
 //   labels[newKey] = campaignName;
 
 //   const newSettingsStr = JSON.stringify({ labels });
 
-//   // 4. Update the status column settings with new labels
-//   const mutation = `
-//     mutation {
-//       change_column_settings(
-//         board_id: ${LEAD_BOARD_ID},
-//         column_id: "${STATUS_COLUMN_ID}",
-//         settings_str: "${newSettingsStr.replace(/"/g, '\\"')}"
-//       ) {
-//         id
-//       }
-//     }
-//   `;
+//   // const mutation = `
+//   //   mutation {
+//   //     change_column_metadata(
+//   //       board_id: ${leadBoardId},
+//   //       column_id: "${statusColumnId}",
+//   //        settings_str: "${newSettingsStr.replace(/"/g, '\\"')}"
+         
+//   //     ) {
+//   //       id
+//   //     }
+//   //   }
+//   // `;
 
-//   const updateResponse = await mondayAPI(mutation);
-//   if (updateResponse && !updateResponse.errors) {
-//     console.log("✅ Added new label:", campaignName);
-//   } else {
-//     console.error(
-//       "❌ Failed to add label:",
-//       updateResponse.errors || updateResponse
-//     );
+
+
+//   const mutation = `
+//   mutation {
+//     change_column_metadata(
+//       board_id: ${leadBoardId},
+//       column_id: "${statusColumnId}",
+//       column_metadata: {
+//         labels: ${JSON.stringify(labels).replace(/"([^"]+)":/g, "$1:")}
+//       }
+//     ) {
+//       id
+//     }
 //   }
+// `;
+
+
+//   //   await mondayAPI(mutation);
+//   //   console.log("✅ Added new label:", campaignName);
+//   // }
+
+//   const mutationResponse = await mondayAPI(mutation);
+//   console.log(
+//     "🟢 Mutation response:",
+//     JSON.stringify(mutationResponse, null, 2)
+//   );
+//   console.log("✅ Added new label:", campaignName);
 // }
 
-// // Root route for health check
+// // Root route (test)
 // app.get("/", (req, res) => {
-//   res.send("✅ Server is running!");
+//   res.send("✅ Server is running on Render!");
 // });
 
-// // Webhook endpoint
+// // Webhook endpoint for Monday automation
+// // app.post("/webhook", async (req, res) => {
+// //   console.log("📬 Webhook received:", JSON.stringify(req.body));
+
+// //   const itemName = req.body?.event?.value?.name || "Unnamed";
+
+// //   if (!itemName || itemName === "Unnamed") {
+// //     return res.status(200).send("⚠️ Test webhook received. No item name.");
+// //   }
+
+// //   console.log("📢 New campaign detected:", itemName);
+// //   await addCampaignAsLabel(itemName);
+
+// //   res.status(200).send("✅ Label synced");
+// // });
+
 // app.post("/webhook", async (req, res) => {
 //   console.log("📬 Webhook received:", JSON.stringify(req.body));
 
-//   // Respond to Monday webhook challenge verification
+//   // ✅ Respond to Monday's webhook verification challenge
 //   if (req.body.challenge) {
 //     console.log("🔐 Responding to challenge:", req.body.challenge);
 //     return res.status(200).send(req.body);
 //   }
 
-//   // Extract new item name (campaign name)
+//   // ✅ Process real event data
 //   const itemName = req.body?.event?.pulseName || "Unnamed";
+
 
 //   if (!itemName || itemName === "Unnamed") {
 //     return res.status(200).send("⚠️ No item name found.");
@@ -417,3 +275,108 @@ app.listen(PORT, () => {
 // app.listen(PORT, () => {
 //   console.log(`🚀 Server running on port ${PORT}`);
 // });
+
+
+require("dotenv").config();
+const express = require("express");
+const axios = require("axios");
+const app = express();
+app.use(express.json());
+
+const {
+  MONDAY_API_KEY,
+  CAMPAIGN_BOARD_ID,
+  CAMPAIGN_STATUS_COLUMN_ID,
+  CAMPAIGN_LEADCOUNT_COLUMN_ID,
+} = process.env;
+
+const MONDAY_API_URL = "https://api.monday.com/v2";
+const headers = {
+  "Content-Type": "application/json",
+  Authorization: MONDAY_API_KEY,
+};
+
+app.post("/webhook", async (req, res) => {
+  try {
+    const leadItemId = req.body.event.pulseId;
+
+    const campaignName = await getLeadCampaignName(leadItemId);
+    if (!campaignName) return res.status(400).send("No campaign name found.");
+
+    const campaignItemId = await findMatchingCampaignItem(campaignName);
+    if (!campaignItemId) return res.status(404).send("Campaign not found.");
+
+    const currentCount = await getLeadCount(campaignItemId);
+    await updateLeadCount(campaignItemId, currentCount + 1);
+
+    res.status(200).send("Lead count updated.");
+  } catch (err) {
+    console.error("❌ Error:", err.message);
+    res.status(500).send("Server error.");
+  }
+});
+
+async function getLeadCampaignName(itemId) {
+  const query = `
+    query {
+      items(ids: ${itemId}) {
+        column_values(ids: "${CAMPAIGN_STATUS_COLUMN_ID}") {
+          text
+        }
+      }
+    }
+  `;
+  const res = await axios.post(MONDAY_API_URL, { query }, { headers });
+  return res.data.data.items[0]?.column_values[0]?.text || null;
+}
+
+async function findMatchingCampaignItem(name) {
+  const query = `
+    query {
+      boards(ids: ${CAMPAIGN_BOARD_ID}) {
+        items {
+          id
+          name
+        }
+      }
+    }
+  `;
+  const res = await axios.post(MONDAY_API_URL, { query }, { headers });
+  const items = res.data.data.boards[0].items;
+  const match = items.find(
+    (item) => item.name.trim().toLowerCase() === name.trim().toLowerCase()
+  );
+  return match ? match.id : null;
+}
+
+async function getLeadCount(itemId) {
+  const query = `
+    query {
+      items(ids: ${itemId}) {
+        column_values(ids: "${CAMPAIGN_LEADCOUNT_COLUMN_ID}") {
+          value
+        }
+      }
+    }
+  `;
+  const res = await axios.post(MONDAY_API_URL, { query }, { headers });
+  const value = res.data.data.items[0].column_values[0].value;
+  const parsed = JSON.parse(value || "{}");
+  return parsed?.number || 0;
+}
+
+async function updateLeadCount(itemId, newCount) {
+  const mutation = `
+    mutation {
+      change_simple_column_value(item_id: ${itemId}, column_id: "${CAMPAIGN_LEADCOUNT_COLUMN_ID}", value: ${newCount}) {
+        id
+      }
+    }
+  `;
+  await axios.post(MONDAY_API_URL, { query: mutation }, { headers });
+}
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
