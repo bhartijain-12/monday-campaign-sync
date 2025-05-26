@@ -424,8 +424,6 @@ const COUNTER_COLUMN_ID = "numeric_mkradsbn"; // counter column ID on campaign b
 
 // Helper to call Monday API
 async function mondayAPI(query, variables = {}) {
-  console.log("Query:",query)
-  console.log("variables:",variables)
   try {
     const response = await axios.post(
       MONDAY_API_URL,
@@ -464,7 +462,6 @@ app.post("/webhook", async (req, res) => {
       }
     }
   `;
-  console.log("Campaignnnidddddddd", CAMPAIGN_BOARD_ID);
   const leadData = await mondayAPI(campaignQuery);
   const campaignName = leadData?.data?.items?.[0]?.column_values?.[0]?.text;
 
@@ -497,7 +494,7 @@ app.post("/webhook", async (req, res) => {
 //   
 
 const findQuery = `
-query ($boardId: ID!, $campaignName: [String!]) {
+query ($boardId: ID!, $campaignName: [String]) {
   items_page_by_column_values (
     limit: 100,
     board_id: $boardId,
@@ -520,7 +517,7 @@ query ($boardId: ID!, $campaignName: [String!]) {
   }
 }
 `;
- 
+
 const variables = {
   boardId: CAMPAIGN_BOARD_ID,
   campaignName: [campaignName],
