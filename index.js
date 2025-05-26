@@ -438,7 +438,7 @@ async function mondayAPI(query, variables = {}) {
     return response.data;
   } catch (error) {
     console.error(
-      "❌ Monday API error:",
+      "Monday API error:",
       error.response?.data || error.message
     );
     return null;
@@ -450,7 +450,7 @@ app.post("/webhook", async (req, res) => {
   console.log("📬 Webhook received:", JSON.stringify(req.body));
 
   const leadItemId = req.body?.event?.pulseId;
-  if (!leadItemId) return res.status(400).send("❌ Missing pulse ID.");
+  if (!leadItemId) return res.status(400).send(" Missing pulse ID.");
 
   // 1. Get the campaign name from the status column in the new lead item
   const campaignQuery = `
@@ -472,20 +472,38 @@ app.post("/webhook", async (req, res) => {
   console.log("🎯 Campaign from lead:", campaignName);
 
   // 2. Find the matching item in the Campaign board
+  // const findQuery = `
+  //   query {
+  //     boards(ids: ${CAMPAIGN_BOARD_ID}) {
+  //       items {
+  //         id
+  //         name
+  //         column_values(ids: ["${COUNTER_COLUMN_ID}"]) {
+  //           id
+  //           value
+  //         }
+  //       }
+  //     }
+  //   }
+  // `;
+
   const findQuery = `
-    query {
-      boards(ids: ${CAMPAIGN_BOARD_ID}) {
-        items {
+  query {
+    boards(ids: ${CAMPAIGN_BOARD_ID}) {
+      id
+      name
+      items {
+        id
+        name
+        column_values(ids: ["${COUNTER_COLUMN_ID}"]) {
           id
-          name
-          column_values(ids: ["${COUNTER_COLUMN_ID}"]) {
-            id
-            value
-          }
+          value
         }
       }
     }
-  `;
+  }
+`;
+
   const campaignData = await mondayAPI(findQuery);
   const campaignItems = campaignData?.data?.boards?.[0]?.items || [];
 
