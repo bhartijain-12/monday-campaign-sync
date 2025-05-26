@@ -30,7 +30,7 @@ async function mondayAPI(query, variables = {}) {
 
 // Webhook route
 app.post("/webhook", async (req, res) => {
-  console.log("📬 Webhook received");
+  console.log("📬 Webhook received Monday Romil");
 
   const itemId = req.body?.event?.pulseId;
   if (!itemId) return res.status(400).send("Missing pulse ID.");
