@@ -612,6 +612,7 @@ async function mondayAPI(query, variables = {}) {
         },
       }
     );
+    console.log('Response',response);
     return response.data;
   } catch (error) {
     console.error("Monday API error:", error.response?.data || error.message);
