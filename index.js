@@ -147,8 +147,8 @@ async function mondayAPI(query, variables = {}) {
 
 // Helper: Add label to status column if it doesn't already exist
 async function addCampaignAsLabel(campaignName) {
-  const leadBoardId = 1991449947;
-  const statusColumnId = "color_mkr326nz";
+  const leadBoardId = 2019233221;
+  const statusColumnId = "color_mkra9se9";
 
   const query = `
     query {
@@ -230,7 +230,8 @@ app.post("/webhook", async (req, res) => {
   }
 
   // ✅ Process real event data
-  const itemName = req.body?.event?.value?.name || "Unnamed";
+  const itemName = req.body?.event?.pulseName || "Unnamed";
+
 
   if (!itemName || itemName === "Unnamed") {
     return res.status(200).send("⚠️ No item name found.");
