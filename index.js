@@ -494,7 +494,7 @@ app.post("/webhook", async (req, res) => {
 //   
 
 const findQuery = `
-query ($boardId: [ID], $campaignName: [String]) {
+query ($boardId: ID!, $campaignName: [String]) {
   items_page_by_column_values (
     limit: 100,
     board_id: $boardId,
