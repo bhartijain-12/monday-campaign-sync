@@ -12,6 +12,8 @@ const STATUS_COLUMN_ID = "color_mkraf5e"; // Status column on the Lead board wit
 
 // Webhook endpoint
 app.post("/webhook", async (req, res) => {
+  console.log('Webhook received');
+  res.sendStatus(200);
 });
 
 // Test route
