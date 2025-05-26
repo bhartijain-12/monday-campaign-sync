@@ -493,8 +493,40 @@ app.post("/webhook", async (req, res) => {
 
 //   
 
+// const findQuery = `
+// query ($boardId: [Int], $campaignName: [String]) {
+//   items_page_by_column_values (
+//     limit: 100,
+//     board_id: $boardId,
+//     columns: [
+//       { column_id: "name", column_values: $campaignName }
+//     ]
+//   ) {
+//     cursor
+//     items {
+//       id
+//       name
+//       column_values {
+//         column {
+//           title
+//         }
+//         text
+//         value
+//       }
+//     }
+//   }
+// }
+// `;
+
+// const variables = {
+//   boardId: CAMPAIGN_BOARD_ID,
+//   campaignName: [campaignName],
+// };
+
+
+
 const findQuery = `
-query ($boardId: [Int], $campaignName: [String]) {
+query ($boardId: ID!, $campaignName: [String!]) {
   items_page_by_column_values (
     limit: 100,
     board_id: $boardId,
@@ -506,11 +538,8 @@ query ($boardId: [Int], $campaignName: [String]) {
     items {
       id
       name
-      column_values {
-        column {
-          title
-        }
-        text
+      column_values(ids: ["${COUNTER_COLUMN_ID}"]) {
+        id
         value
       }
     }
@@ -519,9 +548,14 @@ query ($boardId: [Int], $campaignName: [String]) {
 `;
 
 const variables = {
-  boardId: CAMPAIGN_BOARD_ID,
-  campaignName: [campaignName],
+  boardId: CAMPAIGN_BOARD_ID.toString(), // pass as string
+  campaignName: [campaignName], // pass as array of strings if expected
 };
+
+
+
+
+
 
 const campaignData = await mondayAPI(findQuery, variables);
 
