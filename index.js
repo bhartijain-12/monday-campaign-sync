@@ -183,18 +183,35 @@ async function addCampaignAsLabel(campaignName) {
 
   const newSettingsStr = JSON.stringify({ labels });
 
-  const mutation = `
-    mutation {
-      change_column_metadata(
-        board_id: ${leadBoardId},
-        column_id: "${statusColumnId}",
-         settings_str: "${newSettingsStr.replace(/"/g, '\\"')}"
+  // const mutation = `
+  //   mutation {
+  //     change_column_metadata(
+  //       board_id: ${leadBoardId},
+  //       column_id: "${statusColumnId}",
+  //        settings_str: "${newSettingsStr.replace(/"/g, '\\"')}"
          
-      ) {
-        id
+  //     ) {
+  //       id
+  //     }
+  //   }
+  // `;
+
+
+
+  const mutation = `
+  mutation {
+    change_column_metadata(
+      board_id: ${leadBoardId},
+      column_id: "${statusColumnId}",
+      column_metadata: {
+        labels: ${JSON.stringify(labels).replace(/"([^"]+)":/g, "$1:")}
       }
+    ) {
+      id
     }
-  `;
+  }
+`;
+
 
   //   await mondayAPI(mutation);
   //   console.log("✅ Added new label:", campaignName);
