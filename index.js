@@ -601,6 +601,7 @@ const COUNTER_COLUMN_ID = "numeric_mkradsbn"; // Counter column ID on campaign b
 // Helper to call Monday API
 async function mondayAPI(query, variables = {}) {
   try {
+    console.log("query", { query, variables });
     const response = await axios.post(
       MONDAY_API_URL,
       { query, variables },
@@ -636,13 +637,15 @@ app.post("/webhook", async (req, res) => {
     }
   `;
   const leadData = await mondayAPI(campaignQuery);
+  console.log("campaignQuery", campaignQuery);
   const campaignName = leadData?.data?.items?.[0]?.column_values?.[0]?.text;
 
   if (!campaignName) {
     return res.status(200).send("⚠️ No campaign selected.");
   }
-
+ 
   console.log("🎯 Campaign from lead:", campaignName);
+
 
   // 2. Find the matching item in the Campaign board using name match
   const findQuery = `
@@ -716,7 +719,7 @@ app.post("/webhook", async (req, res) => {
       }
     }
   `;
-
+  console.log("updateMutation", updateMutation);
   const updateResult = await mondayAPI(updateMutation);
 
   if (!updateResult || updateResult.errors) {
@@ -727,8 +730,8 @@ app.post("/webhook", async (req, res) => {
     return res.status(500).send("Failed to update campaign counter.");
   }
 
-  console.log(`✅ Counter for '${campaignName}' updated to ${newValue}`);
-  res.status(200).send("✅ Campaign counter updated.");
+  console.log(`Counter for '${campaignName}' updated to ${newValue}`);
+  res.status(200).send("Campaign counter updated.");
 });
 
 // Test route
