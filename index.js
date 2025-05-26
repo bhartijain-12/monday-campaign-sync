@@ -8,7 +8,7 @@ app.use(express.json());
 const MONDAY_API_URL = "https://api.monday.com/v2";
 const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN;
 
-// Helper to call monday.com API
+// Helper function for monday.com API
 async function mondayAPI(query, variables = {}) {
   try {
     const response = await axios.post(
@@ -28,30 +28,41 @@ async function mondayAPI(query, variables = {}) {
   }
 }
 
-// Webhook handler: update item name
+// Webhook route
 app.post("/webhook", async (req, res) => {
   console.log("📬 Webhook received");
 
   const itemId = req.body?.event?.pulseId;
   if (!itemId) return res.status(400).send("Missing pulse ID.");
 
-  // Step 1: Get current name
-  const getNameQuery = `
+  // 1. Fetch item name and board_id
+  const getItemQuery = `
     query {
       items(ids: ${itemId}) {
         name
+        board {
+          id
+        }
       }
     }
   `;
-  const data = await mondayAPI(getNameQuery);
-  const currentName = data?.data?.items?.[0]?.name || "Unnamed";
 
-  // Step 2: Update name column with static string
+  const data = await mondayAPI(getItemQuery);
+  const item = data?.data?.items?.[0];
+
+  if (!item) return res.status(404).send("Item not found.");
+
+  const currentName = item.name || "Unnamed";
+  const boardId = item.board.id;
+
+  // 2. Update item name
   const newName = `${currentName} - Updated via Webhook`;
-  const updateNameMutation = `
+
+  const updateMutation = `
     mutation {
       change_simple_column_value(
         item_id: ${itemId},
+        board_id: ${boardId},
         column_id: "name",
         value: "${newName.replace(/"/g, '\\"')}"
       ) {
@@ -59,14 +70,15 @@ app.post("/webhook", async (req, res) => {
       }
     }
   `;
-  const updateResult = await mondayAPI(updateNameMutation);
+
+  const updateResult = await mondayAPI(updateMutation);
 
   if (updateResult?.errors) {
     console.error("❌ Failed to update item name:", updateResult.errors);
-    return res.status(500).send("Error updating item name.");
+    return res.status(500).send("Failed to update item name.");
   }
 
-  console.log(`✅ Updated item ${itemId} name to: ${newName}`);
+  console.log(`✅ Item ${itemId} updated to: ${newName}`);
   res.status(200).send("Item name updated.");
 });
 
