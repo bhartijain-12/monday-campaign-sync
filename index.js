@@ -487,29 +487,54 @@ app.post("/webhook", async (req, res) => {
   //   }
   // `;
 
-  const findQuery = `
-  query {
-    items(board_id: ${CAMPAIGN_BOARD_ID}) {
+
+
+
+
+//   
+
+const findQuery = `
+query ($boardId: [Int], $campaignName: [String]) {
+  items_page_by_column_values (
+    limit: 100,
+    board_id: $boardId,
+    columns: [
+      { column_id: "name", column_values: $campaignName }
+    ]
+  ) {
+    cursor
+    items {
       id
       name
-      column_values(ids: ["${COUNTER_COLUMN_ID}"]) {
-        id
+      column_values {
+        column {
+          title
+        }
+        text
         value
       }
     }
   }
+}
 `;
 
+const variables = {
+  boardId: CAMPAIGN_BOARD_ID,
+  campaignName: [campaignName],
+};
 
-  const campaignData = await mondayAPI(findQuery);
-  const campaignItems = campaignData?.data?.boards?.[0]?.items || [];
+const campaignData = await mondayAPI(findQuery, variables);
 
-  const matchedItem = campaignItems.find((item) => item.name === campaignName);
+const campaignItems =
+  campaignData?.data?.items_page_by_column_values?.items || [];
 
-  if (!matchedItem) {
-    console.log("❌ No campaign item matched.");
-    return res.status(200).send("⚠️ Campaign item not found.");
-  }
+if (campaignItems.length === 0) {
+  console.log("❌ No campaign item matched.");
+  return res.status(200).send("⚠️ Campaign item not found.");
+}
+
+const matchedItem = campaignItems[0];
+
 
   // Parse the current numeric counter properly
   const currentValue = parseInt(
