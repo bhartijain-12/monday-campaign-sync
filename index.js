@@ -411,46 +411,63 @@ const axios = require("axios");
 const app = express();
 app.use(express.json());
 
-// your code here (routes, functions, etc.)
+const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN;
+const CAMPAIGN_BOARD_ID = 2019233164; // replace with your Campaign Board ID
+const COUNTER_COLUMN_ID = "numbers"; // replace with your counter column ID on Campaign Board
 
-
-// Make sure these constants are set to your actual values
-const CAMPAIGN_BOARD_ID = 2019233164; // example
-const COUNTER_COLUMN_ID = "numbers"; // replace with your actual numbers column ID
-
+// Monday.com GraphQL API helper
 async function mondayAPI(query, variables = {}) {
   try {
-    const response = await axios.post(
+    const res = await axios.post(
       "https://api.monday.com/v2",
       { query, variables },
       {
         headers: {
-          Authorization: process.env.MONDAY_API_TOKEN,
+          Authorization: MONDAY_API_TOKEN,
           "Content-Type": "application/json",
         },
       }
     );
-    if(response.data.errors) {
-      console.error("Monday API errors:", response.data.errors);
+    if (res.data.errors) {
+      console.error("Monday API errors:", res.data.errors);
     }
-    return response.data;
+    return res.data;
   } catch (error) {
-    console.error("Monday API request failed:", error.response?.data || error.message);
+    console.error(
+      "Monday API request failed:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 }
 
+// Health check route
+app.get("/", (req, res) => {
+  res.send("✅ Server is running");
+});
+
+// Webhook POST handler
 app.post("/webhook", async (req, res) => {
   try {
-    console.log("Webhook payload:", JSON.stringify(req.body));
+    console.log("📬 Webhook received:", JSON.stringify(req.body));
 
-    const event = req.body.event;
-    const campaignName = event?.columnValues?.color_mkraagvh?.label?.text;
-    if (!campaignName) {
-      return res.status(200).send("No campaign name found in payload");
+    // Respond to monday webhook challenge verification
+    if (req.body.challenge) {
+      return res.status(200).send(req.body);
     }
 
-    // 1. Query Campaign board items to find matching campaign
+    const event = req.body.event;
+
+    // Extract campaign name from the status column value of the new lead
+    const campaignName = event?.columnValues?.color_mkraagvh?.label?.text;
+    if (!campaignName) {
+      console.log("⚠️ No campaign name found in webhook payload");
+      return res.status(200).send("No campaign name found");
+    }
+
+    console.log("📢 Campaign name from lead:", campaignName);
+
+    // Query campaign board items to find the campaign with matching name
     const query = `
       query {
         boards(ids: ${CAMPAIGN_BOARD_ID}) {
@@ -465,48 +482,60 @@ app.post("/webhook", async (req, res) => {
         }
       }
     `;
-    const campaignData = await mondayAPI(query);
-    const items = campaignData?.data?.boards?.[0]?.items || [];
+    const data = await mondayAPI(query);
 
-    const campaignItem = items.find(item => item.name === campaignName);
+    const items = data?.data?.boards?.[0]?.items || [];
+    const campaignItem = items.find((item) => item.name === campaignName);
+
     if (!campaignItem) {
-      console.log("Campaign item not found:", campaignName);
+      console.log("⚠️ Campaign item not found with name:", campaignName);
       return res.status(200).send("Campaign not found");
     }
 
-    // 2. Parse current counter value (handle empty or null)
-    let currentCounter = 0;
-    if (campaignItem.column_values.length > 0 && campaignItem.column_values[0].value) {
-      try {
+    // Get current counter value (stored as JSON string)
+    let currentCount = 0;
+    try {
+      if (
+        campaignItem.column_values.length > 0 &&
+        campaignItem.column_values[0].value
+      ) {
         const val = JSON.parse(campaignItem.column_values[0].value);
-        currentCounter = val.number || 0;
-      } catch {
-        currentCounter = 0;
+        currentCount = val.number || 0;
       }
+    } catch (err) {
+      console.log("Error parsing current counter value, defaulting to 0");
     }
 
-    const newCounter = currentCounter + 1;
+    const newCount = currentCount + 1;
+    console.log(
+      `Updating campaign '${campaignName}' counter from ${currentCount} to ${newCount}`
+    );
 
-    // 3. Update counter column value
+    // Mutation to update the counter column value on the campaign item
     const mutation = `
       mutation {
         change_column_value(
           board_id: ${CAMPAIGN_BOARD_ID},
           item_id: ${campaignItem.id},
           column_id: "${COUNTER_COLUMN_ID}",
-          value: "{\"number\":${newCounter}}"
+          value: "{\\"number\\":${newCount}}"
         ) {
           id
         }
       }
     `;
 
-    const mutationResponse = await mondayAPI(mutation);
-    console.log("Update response:", JSON.stringify(mutationResponse));
+    const mutationRes = await mondayAPI(mutation);
+    console.log("✅ Counter updated:", mutationRes);
 
     res.status(200).send("Counter updated successfully");
   } catch (error) {
-    console.error("Error in webhook processing:", error);
-    res.status(500).send("Internal server error");
+    console.error("❌ Error processing webhook:", error);
+    res.status(500).send("Internal Server Error");
   }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
