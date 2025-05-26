@@ -290,7 +290,7 @@ const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN;
 const LEAD_BOARD_ID = 2019233221;
 const CAMPAIGN_BOARD_ID = 2019233164;
 const STATUS_COLUMN_ID = "color_mkra9se9"; // column on lead board containing campaign name
-const COUNTER_COLUMN_ID = "numbers"; // counter column ID on campaign board (replace if needed)
+const COUNTER_COLUMN_ID = "numeric_mkradsbn"; // counter column ID on campaign board (replace if needed)
 
 // Helper to call Monday API
 async function mondayAPI(query, variables = {}) {
