@@ -280,103 +280,123 @@
 require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
+
 const app = express();
 app.use(express.json());
 
-const {
-  MONDAY_API_KEY,
-  CAMPAIGN_BOARD_ID,
-  CAMPAIGN_STATUS_COLUMN_ID,
-  CAMPAIGN_LEADCOUNT_COLUMN_ID,
-} = process.env;
-
 const MONDAY_API_URL = "https://api.monday.com/v2";
-const headers = {
-  "Content-Type": "application/json",
-  Authorization: MONDAY_API_KEY,
-};
+const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN;
 
-app.post("/webhook", async (req, res) => {
+const LEAD_BOARD_ID = 2019233221;
+const CAMPAIGN_BOARD_ID = 2019233164;
+const STATUS_COLUMN_ID = "color_mkra9se9"; // column on lead board containing campaign name
+const COUNTER_COLUMN_ID = "numbers"; // counter column ID on campaign board (replace if needed)
+
+// Helper to call Monday API
+async function mondayAPI(query, variables = {}) {
   try {
-    const leadItemId = req.body.event.pulseId;
-
-    const campaignName = await getLeadCampaignName(leadItemId);
-    if (!campaignName) return res.status(400).send("No campaign name found.");
-
-    const campaignItemId = await findMatchingCampaignItem(campaignName);
-    if (!campaignItemId) return res.status(404).send("Campaign not found.");
-
-    const currentCount = await getLeadCount(campaignItemId);
-    await updateLeadCount(campaignItemId, currentCount + 1);
-
-    res.status(200).send("Lead count updated.");
-  } catch (err) {
-    console.error("❌ Error:", err.message);
-    res.status(500).send("Server error.");
+    const response = await axios.post(
+      MONDAY_API_URL,
+      { query, variables },
+      {
+        headers: {
+          Authorization: MONDAY_API_TOKEN,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error(
+      "❌ Monday API error:",
+      error.response?.data || error.message
+    );
+    return null;
   }
-});
+}
 
-async function getLeadCampaignName(itemId) {
-  const query = `
+// Webhook endpoint
+app.post("/webhook", async (req, res) => {
+  console.log("📬 Webhook received:", JSON.stringify(req.body));
+
+  const leadItemId = req.body?.event?.pulseId;
+  if (!leadItemId) return res.status(400).send("❌ Missing pulse ID.");
+
+  // 1. Get the campaign name from the status column in the new lead item
+  const campaignQuery = `
     query {
-      items(ids: ${itemId}) {
-        column_values(ids: "${CAMPAIGN_STATUS_COLUMN_ID}") {
+      items(ids: ${leadItemId}) {
+        column_values(ids: ["${STATUS_COLUMN_ID}"]) {
           text
         }
       }
     }
   `;
-  const res = await axios.post(MONDAY_API_URL, { query }, { headers });
-  return res.data.data.items[0]?.column_values[0]?.text || null;
-}
+  const leadData = await mondayAPI(campaignQuery);
+  const campaignName = leadData?.data?.items?.[0]?.column_values?.[0]?.text;
 
-async function findMatchingCampaignItem(name) {
-  const query = `
+  if (!campaignName) {
+    return res.status(200).send("⚠️ No campaign selected.");
+  }
+
+  console.log("🎯 Campaign from lead:", campaignName);
+
+  // 2. Find the matching item in the Campaign board
+  const findQuery = `
     query {
       boards(ids: ${CAMPAIGN_BOARD_ID}) {
         items {
           id
           name
+          column_values(ids: ["${COUNTER_COLUMN_ID}"]) {
+            id
+            value
+          }
         }
       }
     }
   `;
-  const res = await axios.post(MONDAY_API_URL, { query }, { headers });
-  const items = res.data.data.boards[0].items;
-  const match = items.find(
-    (item) => item.name.trim().toLowerCase() === name.trim().toLowerCase()
+  const campaignData = await mondayAPI(findQuery);
+  const campaignItems = campaignData?.data?.boards?.[0]?.items || [];
+
+  const matchedItem = campaignItems.find((item) => item.name === campaignName);
+
+  if (!matchedItem) {
+    console.log("❌ No campaign item matched.");
+    return res.status(200).send("⚠️ Campaign item not found.");
+  }
+
+  const currentValue = parseInt(
+    JSON.parse(matchedItem.column_values[0]?.value || "{}")?.text || "0"
   );
-  return match ? match.id : null;
-}
+  const newValue = currentValue + 1;
 
-async function getLeadCount(itemId) {
-  const query = `
-    query {
-      items(ids: ${itemId}) {
-        column_values(ids: "${CAMPAIGN_LEADCOUNT_COLUMN_ID}") {
-          value
-        }
-      }
-    }
-  `;
-  const res = await axios.post(MONDAY_API_URL, { query }, { headers });
-  const value = res.data.data.items[0].column_values[0].value;
-  const parsed = JSON.parse(value || "{}");
-  return parsed?.number || 0;
-}
-
-async function updateLeadCount(itemId, newCount) {
-  const mutation = `
+  // 3. Update the counter column in the Campaign board
+  const updateMutation = `
     mutation {
-      change_simple_column_value(item_id: ${itemId}, column_id: "${CAMPAIGN_LEADCOUNT_COLUMN_ID}", value: ${newCount}) {
+      change_column_value(
+        item_id: ${matchedItem.id},
+        board_id: ${CAMPAIGN_BOARD_ID},
+        column_id: "${COUNTER_COLUMN_ID}",
+        value: "${newValue}"
+      ) {
         id
       }
     }
   `;
-  await axios.post(MONDAY_API_URL, { query: mutation }, { headers });
-}
+  await mondayAPI(updateMutation);
 
+  console.log(`✅ Counter for '${campaignName}' updated to ${newValue}`);
+  res.status(200).send("✅ Campaign counter updated.");
+});
+
+// Test route
+app.get("/", (req, res) => {
+  res.send("✅ Node app is running.");
+});
+
+// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Server is running on port ${PORT}`);
 });
