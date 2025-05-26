@@ -677,9 +677,14 @@ app.post("/webhook", async (req, res) => {
   const campaignData = await mondayAPI(findQuery, variables);
   const campaignItems =
     campaignData?.data?.items_page_by_column_values?.items || [];
+    console.log(
+      "📦 Raw campaign items returned:",
+      JSON.stringify(campaignItems, null, 2)
+    );
+
 
   if (campaignItems.length === 0) {
-    console.log("⚠️ No campaign item matched.");
+    console.log("No campaign item matched.");
     return res.status(200).send("⚠️ Campaign item not found.");
   }
 
@@ -716,7 +721,7 @@ app.post("/webhook", async (req, res) => {
 
   if (!updateResult || updateResult.errors) {
     console.error(
-      "❌ Failed to update campaign counter:",
+      "Failed to update campaign counter:",
       updateResult?.errors
     );
     return res.status(500).send("Failed to update campaign counter.");
