@@ -489,20 +489,17 @@ app.post("/webhook", async (req, res) => {
 
   const findQuery = `
   query {
-    boards(ids: ${CAMPAIGN_BOARD_ID}) {
+    items(board_id: ${CAMPAIGN_BOARD_ID}) {
       id
       name
-      items {
+      column_values(ids: ["${COUNTER_COLUMN_ID}"]) {
         id
-        name
-        column_values(ids: ["${COUNTER_COLUMN_ID}"]) {
-          id
-          value
-        }
+        value
       }
     }
   }
 `;
+
 
   const campaignData = await mondayAPI(findQuery);
   const campaignItems = campaignData?.data?.boards?.[0]?.items || [];
