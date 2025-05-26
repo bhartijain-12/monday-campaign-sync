@@ -493,40 +493,8 @@ app.post("/webhook", async (req, res) => {
 
 //   
 
-// const findQuery = `
-// query ($boardId: [Int], $campaignName: [String]) {
-//   items_page_by_column_values (
-//     limit: 100,
-//     board_id: $boardId,
-//     columns: [
-//       { column_id: "name", column_values: $campaignName }
-//     ]
-//   ) {
-//     cursor
-//     items {
-//       id
-//       name
-//       column_values {
-//         column {
-//           title
-//         }
-//         text
-//         value
-//       }
-//     }
-//   }
-// }
-// `;
-
-// const variables = {
-//   boardId: CAMPAIGN_BOARD_ID,
-//   campaignName: [campaignName],
-// };
-
-
-
 const findQuery = `
-query ($boardId: ID!, $campaignName: [String!]) {
+query ($boardId: [ID], $campaignName: [String]) {
   items_page_by_column_values (
     limit: 100,
     board_id: $boardId,
@@ -538,8 +506,11 @@ query ($boardId: ID!, $campaignName: [String!]) {
     items {
       id
       name
-      column_values(ids: ["${COUNTER_COLUMN_ID}"]) {
-        id
+      column_values {
+        column {
+          title
+        }
+        text
         value
       }
     }
@@ -548,13 +519,9 @@ query ($boardId: ID!, $campaignName: [String!]) {
 `;
 
 const variables = {
-  boardId: CAMPAIGN_BOARD_ID.toString(), // pass as string
-  campaignName: [campaignName], // pass as array of strings if expected
+  boardId: CAMPAIGN_BOARD_ID,
+  campaignName: [campaignName],
 };
-
-
-
-
 
 
 const campaignData = await mondayAPI(findQuery, variables);
@@ -563,7 +530,7 @@ const campaignItems =
   campaignData?.data?.items_page_by_column_values?.items || [];
 
 if (campaignItems.length === 0) {
-  console.log("❌ No campaign item matched.");
+  console.log(" No campaign item matched.");
   return res.status(200).send("⚠️ Campaign item not found.");
 }
 
@@ -594,19 +561,19 @@ const matchedItem = campaignItems[0];
 
   if (!updateResult || updateResult.errors) {
     console.error(
-      "❌ Failed to update campaign counter:",
+      "Failed to update campaign counter:",
       updateResult?.errors
     );
-    return res.status(500).send("❌ Failed to update campaign counter.");
+    return res.status(500).send("Failed to update campaign counter.");
   }
 
-  console.log(`✅ Counter for '${campaignName}' updated to ${newValue}`);
-  res.status(200).send("✅ Campaign counter updated.");
+  console.log(`Counter for '${campaignName}' updated to ${newValue}`);
+  res.status(200).send("Campaign counter updated.");
 });
 
 // Test route
 app.get("/", (req, res) => {
-  res.send("✅ Node app is running.");
+  res.send("Node app is running.");
 });
 
 // Start server
