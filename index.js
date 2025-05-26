@@ -294,6 +294,9 @@ app.use(express.json());
 const MONDAY_API_URL = "https://api.monday.com/v2";
 const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN;
 
+const LEAD_BOARD_ID = 2019233221; // Change to your lead board ID
+const STATUS_COLUMN_ID = "color_mkra9se9"; // Change to your status column ID
+
 // Helper to call Monday API
 async function mondayAPI(query, variables = {}) {
   try {
@@ -313,18 +316,17 @@ async function mondayAPI(query, variables = {}) {
       "❌ Monday API error:",
       error.response?.data || error.message
     );
+    return null;
   }
 }
 
-// Helper: Add campaign as label to status column
+// Add a new label to the status column labels (if not already exists)
 async function addCampaignAsLabel(campaignName) {
-  const leadBoardId = 2019233221;
-  const statusColumnId = "color_mkra9se9";
-
+  // 1. Fetch current status column settings (labels)
   const query = `
     query {
-      boards(ids: ${leadBoardId}) {
-        columns(ids: ["${statusColumnId}"]) {
+      boards(ids: ${LEAD_BOARD_ID}) {
+        columns(ids: ["${STATUS_COLUMN_ID}"]) {
           settings_str
         }
       }
@@ -332,8 +334,12 @@ async function addCampaignAsLabel(campaignName) {
   `;
 
   const response = await mondayAPI(query);
-  const settingsStr = response?.data?.boards?.[0]?.columns?.[0]?.settings_str;
+  if (!response) {
+    console.error("Failed to fetch column settings");
+    return;
+  }
 
+  const settingsStr = response?.data?.boards?.[0]?.columns?.[0]?.settings_str;
   if (!settingsStr) {
     console.error("❌ Could not fetch column settings");
     return;
@@ -342,55 +348,58 @@ async function addCampaignAsLabel(campaignName) {
   const settings = JSON.parse(settingsStr);
   const labels = settings.labels || {};
 
-  const labelExists = Object.values(labels).includes(campaignName);
-  if (labelExists) {
+  // 2. Check if label already exists
+  if (Object.values(labels).includes(campaignName)) {
     console.log("⚠️ Label already exists:", campaignName);
     return;
   }
 
-  // Add new label
+  // 3. Add new label to labels object
   const newKey = Object.keys(labels).length.toString();
   labels[newKey] = campaignName;
 
-  const updatedSettings = JSON.stringify({ labels });
+  const newSettingsStr = JSON.stringify({ labels });
 
-  // Escape JSON string for GraphQL
-  const escapedSettings = updatedSettings
-    .replace(/\\/g, "\\\\")
-    .replace(/"/g, '\\"');
-
+  // 4. Update the status column settings with new labels
   const mutation = `
     mutation {
-      change_column_metadata(
-        board_id: ${leadBoardId},
-        column_id: "${statusColumnId}",
-        settings_str: "${escapedSettings}"
+      change_column_settings(
+        board_id: ${LEAD_BOARD_ID},
+        column_id: "${STATUS_COLUMN_ID}",
+        settings_str: "${newSettingsStr.replace(/"/g, '\\"')}"
       ) {
         id
       }
     }
   `;
 
-  await mondayAPI(mutation);
-  console.log("✅ Added new label:", campaignName);
+  const updateResponse = await mondayAPI(mutation);
+  if (updateResponse && !updateResponse.errors) {
+    console.log("✅ Added new label:", campaignName);
+  } else {
+    console.error(
+      "❌ Failed to add label:",
+      updateResponse.errors || updateResponse
+    );
+  }
 }
 
-// Root test route
+// Root route for health check
 app.get("/", (req, res) => {
-  res.send("✅ Server is running on Render!");
+  res.send("✅ Server is running!");
 });
 
-// Webhook listener from Monday
+// Webhook endpoint
 app.post("/webhook", async (req, res) => {
   console.log("📬 Webhook received:", JSON.stringify(req.body));
 
-  // Respond to webhook challenge
+  // Respond to Monday webhook challenge verification
   if (req.body.challenge) {
     console.log("🔐 Responding to challenge:", req.body.challenge);
     return res.status(200).send(req.body);
   }
 
-  // Extract campaign/item name
+  // Extract new item name (campaign name)
   const itemName = req.body?.event?.pulseName || "Unnamed";
 
   if (!itemName || itemName === "Unnamed") {
