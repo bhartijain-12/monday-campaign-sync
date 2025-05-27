@@ -7,7 +7,7 @@ app.use(express.json());
 
 const MONDAY_API_URL = "https://api.monday.com/v2";
 const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN;
-console.log("Using MONDAY_API_TOKEN:", process.env.MONDAY_API_TOKEN);
+console.log("Using MONDAY_API_TOKEN:", MONDAY_API_TOKEN);
 
 // Helper for Monday API
 async function mondayAPI(query, variables = {}) {
@@ -68,19 +68,18 @@ app.post("/webhook", async (req, res) => {
 
   const creatorId = String(item.creator?.id);
   const requesterId = String(userIdFromQuery);
-
   const currentName = item.name || "Unnamed";
   const boardId = item.board.id;
 
   // Step 2: Update item name
-  const newName = `${currentName} - Updated via Webhook`;
+  const safeNewName = `${currentName} - Updated via Webhook`.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
   const updateNameMutation = `
     mutation {
       change_simple_column_value(
         item_id: ${itemId},
         board_id: ${boardId},
         column_id: "name",
-        value: "${newName.replace(/"/g, '\\"')}"
+        value: "${safeNewName}"
       ) {
         id
       }
@@ -93,14 +92,15 @@ app.post("/webhook", async (req, res) => {
     return res.status(500).send("Failed to update item name.");
   }
 
-  // Step 3: Update owneremail
+  // Step 3: Update owner email
+  const safeEmail = userEmailFromQuery.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
   const updateEmailMutation = `
     mutation {
       change_simple_column_value(
         item_id: ${itemId},
         board_id: ${boardId},
-        column_id: "text_mkrb48t8",
-        value: "${userEmailFromQuery}"
+        column_id: "email_mkrbz0wj",
+        value: "${safeEmail}"
       ) {
         id
       }
@@ -114,7 +114,7 @@ app.post("/webhook", async (req, res) => {
   }
 
   // Step 4: Add static comment
-  const commentText = `We had a successful kickoff call with Acme Corp on May 27. 
+  const rawCommentText = `We had a successful kickoff call with Acme Corp on May 27.
 Key takeaways:
 - Project timeline approved (Start: June 3, End: Aug 15)
 - Main POC: Sarah Johnson (sjohnson@acme.com)
@@ -124,9 +124,11 @@ Next Steps:
 - Finalize project plan by May 30
 - Assign internal team roles by May 28`;
 
+  const safeComment = rawCommentText.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
+
   const commentMutation = `
     mutation {
-      create_update(item_id: ${itemId}, body: "${commentText.replace(/"/g, '\\"')}") {
+      create_update(item_id: ${itemId}, body: "${safeComment}") {
         id
       }
     }
