@@ -9,7 +9,7 @@ const MONDAY_API_URL = "https://api.monday.com/v2";
 const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN;
 console.log("Using MONDAY_API_TOKEN:", process.env.MONDAY_API_TOKEN);
 
-// Helper function for Monday.com API
+// Helper for Monday API
 async function mondayAPI(query, variables = {}) {
   try {
     const response = await axios.post(
@@ -31,7 +31,7 @@ async function mondayAPI(query, variables = {}) {
 
 // Webhook route
 app.post("/webhook", async (req, res) => {
-  console.log("📬 Webhook received", JSON.stringify(req.body));
+  console.log("📬 Webhook received");
   console.log("Headers:", JSON.stringify(req.headers, null, 2));
   console.log("Body:", JSON.stringify(req.body, null, 2));
 
@@ -41,11 +41,13 @@ app.post("/webhook", async (req, res) => {
   const itemId = req.body?.event?.pulseId;
   if (!itemId) return res.status(400).send("Missing pulse ID.");
 
-  // Get userId from query parameters
   const userIdFromQuery = req.query.userId;
-  if (!userIdFromQuery) return res.status(400).send("Missing userId in query.");
+  const userEmailFromQuery = req.query.useremail;
 
-  // Step 1: Fetch item name, board_id, and creator
+  if (!userIdFromQuery) return res.status(400).send("Missing userId in query.");
+  if (!userEmailFromQuery) return res.status(400).send("Missing useremail in query.");
+
+  // Step 1: Get item info
   const getItemQuery = `
     query {
       items(ids: ${itemId}) {
@@ -67,7 +69,6 @@ app.post("/webhook", async (req, res) => {
   const creatorId = String(item.creator?.id);
   const requesterId = String(userIdFromQuery);
 
-  // Check if userId from query matches creator id
   if (creatorId !== requesterId) {
     console.log(`❌ Access denied: userId ${requesterId} is not the creator (${creatorId})`);
     return res.status(403).send("Only the creator can update this item.");
@@ -97,8 +98,37 @@ app.post("/webhook", async (req, res) => {
     return res.status(500).send("Failed to update item name.");
   }
 
-  // Step 3: Add a static comment to the item
-  const commentText = "We had a successful kickoff call with Acme Corp on May 27. Key takeaways: Project timeline approved (Start: June 3, End: Aug 15) Main POC: Sarah Johnson (sjohnson@acme.com) Requested weekly status reports on Mondays Next Steps: Finalize project plan by May 30 Assign internal team roles by May 28";
+  // Step 3: Update owneremail
+  const updateEmailMutation = `
+    mutation {
+      change_simple_column_value(
+        item_id: ${itemId},
+        board_id: ${boardId},
+        column_id: "email_mkrbz0wj",
+        value: "${userEmailFromQuery}"
+      ) {
+        id
+      }
+    }
+  `;
+
+  const emailResult = await mondayAPI(updateEmailMutation);
+  if (emailResult?.errors) {
+    console.error("❌ Failed to update owneremail:", emailResult.errors);
+    return res.status(500).send("Failed to update owneremail.");
+  }
+
+  // Step 4: Add static comment
+  const commentText = `We had a successful kickoff call with Acme Corp on May 27. 
+Key takeaways:
+- Project timeline approved (Start: June 3, End: Aug 15)
+- Main POC: Sarah Johnson (sjohnson@acme.com)
+- Requested weekly status reports on Mondays
+
+Next Steps:
+- Finalize project plan by May 30
+- Assign internal team roles by May 28`;
+
   const commentMutation = `
     mutation {
       create_update(item_id: ${itemId}, body: "${commentText.replace(/"/g, '\\"')}") {
@@ -113,11 +143,11 @@ app.post("/webhook", async (req, res) => {
     return res.status(500).send("Failed to add comment.");
   }
 
-  console.log(`✅ Item ${itemId} updated and comment added by user ${requesterId}.`);
-  res.status(200).send("Item updated and comment added.");
+  console.log(`✅ Item ${itemId} updated by user ${requesterId}.`);
+  res.status(200).send("Item updated, owneremail set, and comment added.");
 });
 
-// Health check route
+// Health check
 app.get("/", (req, res) => {
   res.send("✅ Server is running.");
 });
@@ -125,5 +155,5 @@ app.get("/", (req, res) => {
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server is listening on port ${PORT}`);
+  console.log(`🚀 Server listening on port ${PORT}`);
 });
