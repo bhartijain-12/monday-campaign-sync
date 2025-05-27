@@ -29,7 +29,7 @@ async function mondayAPI(query, variables = {}) {
 }
 
 // Webhook route
-app.post("/webhook", async (req, res) => {
+app.post("/item_name", async (req, res) => {
   console.log("📬 Webhook received");
   console.log("Headers:", JSON.stringify(req.headers, null, 2));
   console.log("Body:", JSON.stringify(req.body, null, 2));
