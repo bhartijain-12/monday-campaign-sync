@@ -7,6 +7,8 @@ app.use(express.json());
 
 const MONDAY_API_URL = "https://api.monday.com/v2";
 const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN;
+console.log("Using MONDAY_API_TOKEN:", process.env.MONDAY_API_TOKEN);
+
 
 // Helper function for Monday.com API
 async function mondayAPI(query, variables = {}) {
