@@ -69,11 +69,6 @@ app.post("/webhook", async (req, res) => {
   const creatorId = String(item.creator?.id);
   const requesterId = String(userIdFromQuery);
 
-  if (creatorId !== requesterId) {
-    console.log(`❌ Access denied: userId ${requesterId} is not the creator (${creatorId})`);
-    return res.status(403).send("Only the creator can update this item.");
-  }
-
   const currentName = item.name || "Unnamed";
   const boardId = item.board.id;
 
