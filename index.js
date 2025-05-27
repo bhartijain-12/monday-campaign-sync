@@ -99,7 +99,7 @@ app.post("/webhook", async (req, res) => {
       change_simple_column_value(
         item_id: ${itemId},
         board_id: ${boardId},
-        column_id: "email_mkrbz0wj",
+        column_id: "text_mkrb48t8",
         value: "${safeEmail}"
       ) {
         id
