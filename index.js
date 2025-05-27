@@ -78,7 +78,7 @@ app.post("/webhook", async (req, res) => {
   }
 
   // Step 3: Add a static comment to the item
-  const commentText = "This item was processed via webhook.";
+  const commentText = "We had a successful kickoff call with Acme Corp on May 27. Key takeaways: Project timeline approved (Start: June 3, End: Aug 15) Main POC: Sarah Johnson (sjohnson@acme.com) Requested weekly status reports on Mondays Next Steps: Finalize project plan by May 30 Assign internal team roles by May 28";
   const commentMutation = `
     mutation {
       create_update(item_id: ${itemId}, body: "${commentText.replace(/"/g, '\\"')}") {
