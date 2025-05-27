@@ -37,7 +37,7 @@ app.post("/webhook", async (req, res) => {
   console.log("Body:", JSON.stringify(req.body, null, 2));
 
   const challenge = req.body?.challenge;
-  if (!challenge) return res.status(200).send(req.body);
+  if (challenge) return res.status(200).send(req.body);
   
   const itemId = req.body?.event?.pulseId;
   if (!itemId) return res.status(400).send("Missing pulse ID.");
