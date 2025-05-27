@@ -9,7 +9,6 @@ const MONDAY_API_URL = "https://api.monday.com/v2";
 const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN;
 console.log("Using MONDAY_API_TOKEN:", process.env.MONDAY_API_TOKEN);
 
-
 // Helper function for Monday.com API
 async function mondayAPI(query, variables = {}) {
   try {
@@ -32,21 +31,28 @@ async function mondayAPI(query, variables = {}) {
 
 // Webhook route
 app.post("/webhook", async (req, res) => {
-  console.log("📬 Webhook received",JSON.stringify(req.body));
+  console.log("📬 Webhook received", JSON.stringify(req.body));
   console.log("Headers:", JSON.stringify(req.headers, null, 2));
   console.log("Body:", JSON.stringify(req.body, null, 2));
 
   const challenge = req.body?.challenge;
   if (challenge) return res.status(200).send(req.body);
-  
+
   const itemId = req.body?.event?.pulseId;
   if (!itemId) return res.status(400).send("Missing pulse ID.");
 
-  // Step 1: Fetch item name and board_id
+  // Get userId from query parameters
+  const userIdFromQuery = req.query.userId;
+  if (!userIdFromQuery) return res.status(400).send("Missing userId in query.");
+
+  // Step 1: Fetch item name, board_id, and creator
   const getItemQuery = `
     query {
       items(ids: ${itemId}) {
         name
+        creator {
+          id
+        }
         board {
           id
         }
@@ -57,6 +63,15 @@ app.post("/webhook", async (req, res) => {
   const data = await mondayAPI(getItemQuery);
   const item = data?.data?.items?.[0];
   if (!item) return res.status(404).send("Item not found.");
+
+  const creatorId = String(item.creator?.id);
+  const requesterId = String(userIdFromQuery);
+
+  // Check if userId from query matches creator id
+  if (creatorId !== requesterId) {
+    console.log(`❌ Access denied: userId ${requesterId} is not the creator (${creatorId})`);
+    return res.status(403).send("Only the creator can update this item.");
+  }
 
   const currentName = item.name || "Unnamed";
   const boardId = item.board.id;
@@ -98,7 +113,7 @@ app.post("/webhook", async (req, res) => {
     return res.status(500).send("Failed to add comment.");
   }
 
-  console.log(`✅ Item ${itemId} updated and comment added.`);
+  console.log(`✅ Item ${itemId} updated and comment added by user ${requesterId}.`);
   res.status(200).send("Item updated and comment added.");
 });
 
