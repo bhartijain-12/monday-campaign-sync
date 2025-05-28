@@ -10,7 +10,7 @@
       "headers": {
         "Content-Type": "application/json"
       },
-      "body": "{\"boardId\": \"{{boardId}}\", \"itemId\": \"{{pulseId}}\", \"userId\": \"{{userId}}\", \"useremail\": \"{{text_mkrbt7mc}}\"}"
+      "body": "{\"boardId\": \"{{boardId}}\", \"itemId\": \"{{pulseId}}\", \"userId\": \"{{userId}}\", \"useremail\": \"{{text_mkrb48t8}}\"}"
     }
   }
 ]
