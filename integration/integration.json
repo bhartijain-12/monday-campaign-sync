@@ -1,0 +1,12 @@
+[
+  {
+    "name": "Send webhook with dynamic params when item is created",
+    "trigger": {
+      "type": "item_created"
+    },
+    "action": {
+      "url": "https://monday-campaign-sync.onrender.com/webhook?boardId={{boardId}}&itemId={{pulseId}}&userId={{userId}}&useremail={{text_mkrbt7mc}}",
+      "method": "get"
+    }
+  }
+]
