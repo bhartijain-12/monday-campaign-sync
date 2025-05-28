@@ -34,6 +34,10 @@ app.post("/webhook", async (req, res) => {
   console.log("📬 Webhook received");
   console.log("Headers:", JSON.stringify(req.headers, null, 2));
   console.log("Body:", JSON.stringify(req.body, null, 2));
+  for (const [key, value) of Object.entries(req.query)) {
+  console.log(${key}; $(value}');
+
+}
 
   const challenge = req.body?.challenge;
   if (challenge) return res.status(200).send(req.body);
