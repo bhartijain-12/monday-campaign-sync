@@ -1,27 +1,87 @@
 const express = require('express');
+const bodyParser = require('body-parser');
+const axios = require('axios');
+
 const app = express();
+app.use(bodyParser.json());
+
+const MONDAY_API_URL = 'https://api.monday.com/v2';
+const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN; // Securely store in Render env vars
+
+app.post('/webhook', async (req, res) => {
+  const { boardId, itemId, userId, columnId } = req.body;
+
+  console.log('✅ Webhook received:');
+  console.log(`📌 Board ID: ${boardId}`);
+  console.log(`📌 Item ID: ${itemId}`);
+  console.log(`📌 User ID: ${userId}`);
+  console.log(`📌 Column ID: ${columnId}`);
+
+  try {
+    // Query column value from the item
+    const query = `
+      query {
+        items(ids: ${itemId}) {
+          column_values(ids: "${columnId}") {
+            text
+            value
+          }
+        }
+      }
+    `;
+
+    const response = await axios.post(
+      MONDAY_API_URL,
+      { query },
+      {
+        headers: {
+          Authorization: MONDAY_API_TOKEN,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    const columnData = response.data.data.items[0].column_values[0];
+    const columnValue = columnData.text;
+
+    console.log(`📧 Column Value (email): ${columnValue}`);
+
+    res.status(200).send('Webhook handled');
+  } catch (error) {
+    console.error('❌ Error handling webhook:', error.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 const PORT = process.env.PORT || 3000;
-
-// Middleware to parse JSON request bodies
-app.use(express.json());
-
-app.post('/webhook', (req, res) => {
-  const { boardId, itemId, userId, columnValue } = req.body;
-
-  console.log('Received webhook:');
-  console.log('Board ID:', boardId);
-  console.log('Item ID:', itemId);
-  console.log('User ID:', userId);
-  console.log('Column Value:', columnValue);
-
-  // You can add your logic here to process the data...
-
-  res.status(200).send('Webhook received');
-});
-
 app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
+
+// const express = require('express');
+// const app = express();
+// const PORT = process.env.PORT || 3000;
+
+// // Middleware to parse JSON request bodies
+// app.use(express.json());
+
+// app.post('/webhook', (req, res) => {
+//   const { boardId, itemId, userId, columnValue } = req.body;
+
+//   console.log('Received webhook:');
+//   console.log('Board ID:', boardId);
+//   console.log('Item ID:', itemId);
+//   console.log('User ID:', userId);
+//   console.log('Column Value:', columnValue);
+
+//   // You can add your logic here to process the data...
+
+//   res.status(200).send('Webhook received');
+// });
+
+// app.listen(PORT, () => {
+//   console.log(`Server listening on port ${PORT}`);
+// });
 
 
 // const express = require("express");
