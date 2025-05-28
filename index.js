@@ -1,22 +1,51 @@
 const express = require("express");
+const bodyParser = require("body-parser");
+
 const app = express();
 
-app.get("/webhook", (req, res) => {
-  const { boardId, itemId, userId, useremail } = req.query;
+// Parse JSON request bodies
+app.use(bodyParser.json());
 
-  console.log("📬 Webhook Received");
-  console.log("boardId:", boardId);
-  console.log("itemId:", itemId);
-  console.log("userId:", userId);
-  console.log("useremail:", useremail);
+// Webhook endpoint
+app.post("/webhook", (req, res) => {
+  const { boardId, itemId, userId, useremail } = req.body;
 
-  res.status(200).send("Webhook received!");
+  console.log("✅ Webhook received:");
+  console.log("📌 Board ID:", boardId);
+  console.log("📌 Item ID:", itemId);
+  console.log("📌 User ID:", userId);
+  console.log("📌 User Email:", useremail);
+
+  // Respond to Monday.com
+  res.status(200).send("Webhook received successfully");
 });
 
+// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Server is running on port ${PORT}`);
 });
+
+
+// const express = require("express");
+// const app = express();
+
+// app.get("/webhook", (req, res) => {
+//   const { boardId, itemId, userId, useremail } = req.query;
+
+//   console.log("📬 Webhook Received");
+//   console.log("boardId:", boardId);
+//   console.log("itemId:", itemId);
+//   console.log("userId:", userId);
+//   console.log("useremail:", useremail);
+
+//   res.status(200).send("Webhook received!");
+// });
+
+// const PORT = process.env.PORT || 3000;
+// app.listen(PORT, () => {
+//   console.log(`🚀 Server running on port ${PORT}`);
+// });
 
 
 
