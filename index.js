@@ -34,19 +34,22 @@ app.post("/webhook", async (req, res) => {
   console.log("📬 Webhook received");
   console.log("Headers:", JSON.stringify(req.headers, null, 2));
   console.log("Body:", JSON.stringify(req.body, null, 2));
-  for (const [key, value) of Object.entries(req.query)) {
-  console.log(${key}; $(value}');
 
-}
+  // ✅ Print all query parameters
+  console.log("🔍 Query Parameters Received:");
+  for (const [key, value] of Object.entries(req.query)) {
+    console.log(`🔹 ${key}: ${value}`);
+  }
 
   const challenge = req.body?.challenge;
   if (challenge) return res.status(200).send(req.body);
 
-  const itemId = req.body?.event?.pulseId;
+  const itemId = req.body?.event?.pulseId || req.query.itemId;
   if (!itemId) return res.status(400).send("Missing pulse ID.");
 
   const userIdFromQuery = req.query.userId;
   const userEmailFromQuery = req.query.useremail;
+  const boardIdFromQuery = req.query.boardId;
 
   if (!userIdFromQuery) return res.status(400).send("Missing userId in query.");
   if (!userEmailFromQuery) return res.status(400).send("Missing useremail in query.");
