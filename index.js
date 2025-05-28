@@ -1,62 +1,63 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const axios = require('axios');
+// const express = require('express');
+// const bodyParser = require('body-parser');
+// const axios = require('axios');
 
-const app = express();
-app.use(bodyParser.json());
+// const app = express();
+// app.use(bodyParser.json());
 
-const MONDAY_API_URL = 'https://api.monday.com/v2';
-const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN; // Securely store in Render env vars
+// const MONDAY_API_URL = 'https://api.monday.com/v2';
+// const MONDAY_API_TOKEN = process.env.MONDAY_API_TOKEN; // Securely store in Render env vars
 
-app.post('/webhook', async (req, res) => {
-  const { boardId, itemId, userId, columnId } = req.body;
+// app.post('/webhook', async (req, res) => {
+//   const { boardId, itemId, userId, columnId } = req.body;
 
-  console.log('✅ Webhook received:');
-  console.log(`📌 Board ID: ${boardId}`);
-  console.log(`📌 Item ID: ${itemId}`);
-  console.log(`📌 User ID: ${userId}`);
-  console.log(`📌 Column ID: ${columnId}`);
+//   console.log('✅ Webhook received:');
+//   console.log(`📌 Board ID: ${boardId}`);
+//   console.log(`📌 Item ID: ${itemId}`);
+//   console.log(`📌 User ID: ${userId}`);
+//   console.log(`📌 Column ID: ${columnId}`);
 
-  try {
-    // Query column value from the item
-    const query = `
-      query {
-        items(ids: ${itemId}) {
-          column_values(ids: "${columnId}") {
-            text
-            value
-          }
-        }
-      }
-    `;
+//   try {
+//     // Query column value from the item
+//     const query = `
+//       query {
+//         items(ids: ${itemId}) {
+//           column_values(ids: "${columnId}") {
+//             text
+//             value
+//           }
+//         }
+//       }
+//     `;
 
-    const response = await axios.post(
-      MONDAY_API_URL,
-      { query },
-      {
-        headers: {
-          Authorization: MONDAY_API_TOKEN,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+//     const response = await axios.post(
+//       MONDAY_API_URL,
+//       { query },
+//       {
+//         headers: {
+//           Authorization: MONDAY_API_TOKEN,
+//           'Content-Type': 'application/json'
+//         }
+//       }
+//     );
 
-    const columnData = response.data.data.items[0].column_values[0];
-    const columnValue = columnData.text;
+//     const columnData = response.data.data.items[0].column_values[0];
+//     const columnValue = columnData.text;
 
-    console.log(`📧 Column Value (email): ${columnValue}`);
+//     console.log(`📧 Column Value (email): ${columnValue}`);
 
-    res.status(200).send('Webhook handled');
-  } catch (error) {
-    console.error('❌ Error handling webhook:', error.message);
-    res.status(500).send('Server Error');
-  }
-});
+//     res.status(200).send('Webhook handled');
+//   } catch (error) {
+//     console.error('❌ Error handling webhook:', error.message);
+//     res.status(500).send('Server Error');
+//   }
+// });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+
+// const PORT = process.env.PORT || 3000;
+// app.listen(PORT, () => {
+//   console.log(`🚀 Server running on port ${PORT}`);
+// });
 
 // const express = require('express');
 // const app = express();
@@ -84,27 +85,27 @@ app.listen(PORT, () => {
 // });
 
 
-// const express = require("express");
-// const app = express();
+const express = require("express");
+const app = express();
 
-// app.use(express.json());
-// app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// app.get("/webhook", (req, res) => {
-//   const { boardId, itemId, userId, useremail } = req.query;
+app.get("/webhook", (req, res) => {
+  const { boardId, itemId, userId, useremail } = req.query;
 
-//   console.log("📌 Board ID:", boardId);
-//   console.log("📌 Item ID:", itemId);
-//   console.log("📌 User ID:", userId);
-//   console.log("📌 Column Value (Email):", useremail);
+  console.log("📌 Board ID:", boardId);
+  console.log("📌 Item ID:", itemId);
+  console.log("📌 User ID:", userId);
+  console.log("📌 Column Value (Email):", useremail);
 
-//   res.status(200).send("✅ Webhook received");
-// });
+  res.status(200).send("✅ Webhook received");
+});
 
-// const PORT = process.env.PORT || 3000;
-// app.listen(PORT, () => {
-//   console.log(`🚀 Server running on port ${PORT}`);
-// });
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
 
 
 
