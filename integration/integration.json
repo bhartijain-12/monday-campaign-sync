@@ -10,12 +10,7 @@
       "headers": {
         "Content-Type": "application/json"
       },
-      "body": JSON.stringify({
-        "boardId": "{{boardId}}",
-        "itemId": "{{pulseId}}",
-        "userId": "{{userId}}",
-        "useremail": "{{text_mkrbt7mc}}"
-      })
+      "body": "{\"boardId\": \"{{boardId}}\", \"itemId\": \"{{pulseId}}\", \"userId\": \"{{userId}}\", \"useremail\": \"{{text_mkrbt7mc}}\"}"
     }
   }
 ]
