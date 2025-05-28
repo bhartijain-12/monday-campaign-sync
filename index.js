@@ -92,7 +92,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/webhook", (req, res) => {
-   connsole.log("Query",req.query);
+   console.log("Query",req.query);
   const { boardId, itemId, userId, useremail } = req.query;
 
  
