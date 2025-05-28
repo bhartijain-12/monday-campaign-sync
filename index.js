@@ -1,24 +1,26 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-
+const express = require('express');
 const app = express();
-app.use(bodyParser.json());
+const PORT = process.env.PORT || 3000;
 
-app.post("/webhook", (req, res) => {
-  const { boardId, itemId, userId, useremail } = req.body;
+// Middleware to parse JSON request bodies
+app.use(express.json());
 
-  console.log("✅ Webhook received:");
-  console.log("📌 Board ID:", boardId);
-  console.log("📌 Item ID:", itemId);
-  console.log("📌 User ID:", userId);
-  console.log("📌 User Email:", useremail);
+app.post('/webhook', (req, res) => {
+  const { boardId, itemId, userId, columnValue } = req.body;
 
-  res.status(200).send("OK");
+  console.log('Received webhook:');
+  console.log('Board ID:', boardId);
+  console.log('Item ID:', itemId);
+  console.log('User ID:', userId);
+  console.log('Column Value:', columnValue);
+
+  // You can add your logic here to process the data...
+
+  res.status(200).send('Webhook received');
 });
 
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`Server listening on port ${PORT}`);
 });
 
 
