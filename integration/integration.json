@@ -10,7 +10,7 @@
       "headers": {
         "Content-Type": "application/json"
       },
-      "body": "{\"boardId\": \"{{board}}\", \"itemId\": \"{{item}}\", \"userId\": \"{{user}}\", \"columnValue\": \"{{column}}\"}",
+      "body": "{\"boardId\": \"{{board}}\", \"itemId\": \"{{item}}\", \"userId\": \"{{user}}\", \"columnId\": \"{{column}}\"}",
       "mapping": {
         "board": {
           "type": "board",
