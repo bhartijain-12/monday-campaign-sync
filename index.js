@@ -1,8 +1,3 @@
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
-
 const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,8 +6,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 app.post('/webhook', (req, res) => {
-   console.log("Query",req.query);
-  const { boardId, itemId, userId, columnValue } = req.query;
+  const { boardId, itemId, userId, columnValue } = req.body;
 
   console.log('Received webhook:');
   console.log('Board ID:', boardId);
@@ -28,6 +22,7 @@ app.post('/webhook', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
+
 
 
 // const express = require("express");
