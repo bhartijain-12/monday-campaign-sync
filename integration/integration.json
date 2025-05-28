@@ -1,6 +1,6 @@
 [
   {
-    "name": "Send webhook with dynamic params when item is created",
+    "name": "When an item is created, send board, user, and column via webhook",
     "trigger": {
       "type": "item_created"
     },
@@ -10,17 +10,12 @@
       "headers": {
         "Content-Type": "application/json"
       },
-      "body": "{\"boardId\": \"{{board}}\", \"itemId\": \"{{item}}\", \"userId\": \"{{user}}\", \"columnValue\": \"{{column}}\"}",
+      "body": "{\"boardId\": \"{{board}}\", \"itemId\": \"{{pulseId}}\", \"userId\": \"{{user}}\", \"columnId\": \"{{column}}\"}",
       "mapping": {
         "board": {
           "type": "board",
           "required": true,
           "label": "Select Board"
-        },
-        "item": {
-          "type": "item",
-          "required": true,
-          "label": "Select Item"
         },
         "user": {
           "type": "user",
