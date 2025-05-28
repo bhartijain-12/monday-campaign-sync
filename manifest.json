@@ -1,34 +1,23 @@
 {
-  "name": "My Monday Integration",
-  "description": "Integration with dynamic webhook parameters",
+  "name": "Dynamic Webhook App",
+  "description": "Send webhook with dynamic values on item creation",
   "version": "1.0.0",
-  "author": "Your Name",
-  "features": {
-    "integrations": [
-      {
-        "name": "Send dynamic webhook on item creation",
-        "action": {
-          "url": "https://monday-campaign-sync.onrender.com/custom-action"
-        },
-        "trigger": {
-          "url": "https://monday-campaign-sync.onrender.com/webhook"
-        },
-        "recipe": "When an item is created, send data to {{webhookUrl}}",
-        "inputFields": [
-          {
-            "key": "webhookUrl",
-            "label": "Webhook URL",
-            "type": "text"
-          }
-        ]
-      }
-    ]
+  "author": {
+    "name": "Your Name",
+    "email": "you@example.com"
   },
+  "type": "app",
+  "features": [
+    {
+      "type": "integration",
+      "integrationFile": "integration/integration.json"
+    }
+  ],
   "permissions": [
-    "items:read",
     "boards:read",
+    "items:read",
     "users:read",
-    "updates:write",
-    "items:write"
+    "column_values:read"
   ]
 }
+
