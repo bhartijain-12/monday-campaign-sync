@@ -5,8 +5,17 @@
       "type": "item_created"
     },
     "action": {
-      "url": "https://monday-campaign-sync.onrender.com/webhook?boardId={{boardId}}&itemId={{pulseId}}&userId={{userId}}&useremail={{text_mkrbt7mc}}",
-      "method": "get"
+      "url": "https://monday-campaign-sync.onrender.com/webhook",
+      "method": "post",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": JSON.stringify({
+        "boardId": "{{boardId}}",
+        "itemId": "{{pulseId}}",
+        "userId": "{{userId}}",
+        "useremail": "{{text_mkrbt7mc}}"
+      })
     }
   }
 ]
