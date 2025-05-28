@@ -1,0 +1,24 @@
+{
+  "name": "My Monday Integration",
+  "description": "Integration with dynamic webhook parameters",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "features": {
+    "triggers": [
+      {
+        "key": "item_created",
+        "title": "When an item is created",
+        "description": "Trigger when a new item is created on a board",
+        "webhookUrl": "https://monday-campaign-sync.onrender.com?boardId={{board.id}}&itemId={{pulse.id}}&userId={{user.id}}&useremail={{user.email}}"
+      }
+    ],
+    "actions": []
+  },
+  "permissions": [
+    "items:read",
+    "boards:read",
+    "users:read",
+    "updates:write",
+    "items:write"
+  ]
+}
