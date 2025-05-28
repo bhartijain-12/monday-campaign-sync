@@ -1,25 +1,38 @@
 [
   {
-    "name": "When an item is created, send board, user, column via webhook",
+    "name": "Send webhook with dynamic params when item is created",
     "trigger": {
       "type": "item_created"
     },
     "action": {
-      "url": "https://monday-campaign-sync.onrender.com/webhook?boardId={{boardId}}&itemId={{pulseId}}&userId={{userId}}&useremail={{useremail}}",
-      "method": "get",
+      "url": "https://monday-campaign-sync.onrender.com/webhook",
+      "method": "post",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"boardId\": \"{{board}}\", \"itemId\": \"{{item}}\", \"userId\": \"{{user}}\", \"columnId\": \"{{column}}\"}",
       "mapping": {
-        "userId": {
+        "board": {
+          "type": "board",
+          "required": true,
+          "label": "Select Board"
+        },
+        "item": {
+          "type": "item",
+          "required": true,
+          "label": "Select Item"
+        },
+        "user": {
           "type": "user",
           "required": true,
-          "label": "User to send"
+          "label": "Select User"
         },
-        "useremail": {
+        "column": {
           "type": "column",
           "required": true,
-          "label": "Email Column to send"
+          "label": "Select Column"
         }
       }
     }
   }
 ]
-
