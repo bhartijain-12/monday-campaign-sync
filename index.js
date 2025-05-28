@@ -12,7 +12,7 @@ app.post('/webhook', (req, res) => {
   console.log('Board ID:', boardId);
   console.log('Item ID:', itemId);
   console.log('User ID:', userId);
-  console.log('Column Value:', columnValue);
+  console.log('Column Value:', columnId);
 
   // You can add your logic here to process the data...
 
