@@ -4,15 +4,25 @@
   "version": "1.0.0",
   "author": "Your Name",
   "features": {
-    "triggers": [
+    "integrations": [
       {
-        "key": "item_created",
-        "title": "When an item is created",
-        "description": "Trigger when a new item is created on a board",
-        "webhookUrl": "https://monday-campaign-sync.onrender.com?boardId={{board.id}}&itemId={{pulse.id}}&userId={{user.id}}&useremail={{user.email}}"
+        "name": "Send dynamic webhook on item creation",
+        "action": {
+          "url": "https://monday-campaign-sync.onrender.com/custom-action"
+        },
+        "trigger": {
+          "url": "https://monday-campaign-sync.onrender.com/webhook"
+        },
+        "recipe": "When an item is created, send data to {{webhookUrl}}",
+        "inputFields": [
+          {
+            "key": "webhookUrl",
+            "label": "Webhook URL",
+            "type": "text"
+          }
+        ]
       }
-    ],
-    "actions": []
+    ]
   },
   "permissions": [
     "items:read",
