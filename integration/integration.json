@@ -10,7 +10,30 @@
       "headers": {
         "Content-Type": "application/json"
       },
-      "body": "{\"boardId\": \"{{boardId}}\", \"itemId\": \"{{pulseId}}\", \"userId\": \"{{userId}}\", \"useremail\": \"{{text_mkrb48t8}}\"}"
+      "body": "{\"boardId\": \"{{board}}\", \"itemId\": \"{{item}}\", \"userId\": \"{{user}}\", \"columnValue\": \"{{column}}\"}",
+      "mapping": {
+        "board": {
+          "type": "board",
+          "required": true,
+          "label": "Select Board"
+        },
+        "item": {
+          "type": "item",
+          "required": true,
+          "label": "Select Item"
+        },
+        "user": {
+          "type": "user",
+          "required": true,
+          "label": "Select User"
+        },
+        "column": {
+          "type": "column",
+          "required": true,
+          "label": "Select Column"
+        }
+      }
     }
   }
 ]
+
