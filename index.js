@@ -5,21 +5,39 @@ const PORT = process.env.PORT || 3000;
 // Optional: Parse JSON bodies, in case you ever switch to sending data in the body
 app.use(express.json());
 
-app.post('/webhook', (req, res) => {
-  console.log("Query",req.query);
-  // Extract parameters from the query string
-  const { boardId, itemId, userId, columnId } = req.body;
+// app.post('/webhook', (req, res) => {
+//   console.log("Query",req.query);
+//   // Extract parameters from the query string
+//   const { boardId, itemId, userId, columnId } = req.body;
 
-  console.log('✅ Webhook received with query parameters:',JSON.stringify(req.body));
+//   console.log('✅ Webhook received with query parameters:',JSON.stringify(req.body));
+//   console.log('Board ID:', boardId);
+//   console.log('Item ID:', itemId);
+//   console.log('User ID:', userId);
+//   console.log('Column ID:', columnId);
+
+//   // Optional: Add your logic here to process these values
+
+//   res.status(200).send('Webhook received');
+// });
+app.post('/webhook', (req, res) => {
+  console.log("🔍 Full body:", JSON.stringify(req.body, null, 2));
+
+  // Safely extract values from nested structure
+  const inputFields = req.body?.payload?.inputFields || {};
+  const { boardId, itemId, userId, columnId } = inputFields;
+
+  console.log('✅ Webhook received with inputFields:');
   console.log('Board ID:', boardId);
   console.log('Item ID:', itemId);
   console.log('User ID:', userId);
   console.log('Column ID:', columnId);
 
-  // Optional: Add your logic here to process these values
+  // Your processing logic here
 
   res.status(200).send('Webhook received');
 });
+
 
 // Start the server
 app.listen(PORT, () => {
