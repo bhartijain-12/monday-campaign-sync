@@ -1,14 +1,32 @@
-{
-  "name": "When an item is created, send board, user, and column via webhook",
-  "trigger": {
-    "type": "item_created"
-  },
-  "action": {
-    "url": "https://monday-campaign-sync.onrender.com/webhook?boardId={{board}}&itemId={{pulseId}}&userId={{user}}&columnId={{column}}",
-    "method": "post",
-    "headers": {
-      "Content-Type": "application/json"
+[
+  {
+    "name": "When an item is created, send board, user, and column via webhook",
+    "trigger": {
+      "type": "item_created"
+    },
+    "action": {
+      "url": "https://monday-campaign-sync.onrender.com/webhook?boardId={{board.id}}&itemId={{pulseId}}&userId={{user.id}}&columnId={{column.id}}",
+      "method": "post",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "mapping": {
+        "board": {
+          "type": "board",
+          "required": true,
+          "label": "Select Board"
+        },
+        "user": {
+          "type": "user",
+          "required": true,
+          "label": "Select User"
+        },
+        "column": {
+          "type": "column",
+          "required": true,
+          "label": "Select Column"
+        }
+      }
     }
-   
   }
-}
+]
