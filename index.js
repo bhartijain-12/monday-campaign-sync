@@ -8,7 +8,7 @@ app.use(express.json());
 app.post('/webhook', (req, res) => {
   console.log("Query",req.query);
   // Extract parameters from the query string
-  const { boardId, itemId, userId, columnId } = req.query;
+  const { boardId, itemId, userId, columnId } = req.body;
 
   console.log('✅ Webhook received with query parameters:',JSON.stringify(req.body));
   console.log('Board ID:', boardId);
