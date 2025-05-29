@@ -5,7 +5,7 @@
       "type": "item_created"
     },
     "action": {
-      "url": "https://monday-campaign-sync.onrender.com/webhook?boardId={{boardId}}&itemId={{pulseId}}&userId={{userId}}&columnId={{columnId}}",
+      "url": "https://monday-campaign-sync.onrender.com/webhook?boardId={{boardId}}&itemId={{pulseId}}&userId={{userId}}&columnId={{columnId}}&coulmnvalue={{itemColumnValues}}",
       "method": "post",
       "headers": {
         "Content-Type": "application/json"
